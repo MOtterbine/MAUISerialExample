@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Shell.NavBarIsVisible="False"
+             x:Class="MAUIAppSerialExample.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30"
+            Spacing="25">
+
+            <Label
+                Text="MAUI Serial Tester!"
+                Style="{StaticResource Headline}"
+                SemanticProperties.HeadingLevel="Level1" />
+
+            <Label
+                Text=".NET Multi-platform App"
+                Style="{StaticResource SubHeadline}"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Welcome to dot net Multi platform Serial Tester U I" />
+            <Entry
+                Completed="SendDataEntry_Completed"
+                IsEnabled="{Binding CanSend}"
+                x:Name="SendDataEntry"
+                Background="#11000000"
+                WidthRequest="250"
+                Placeholder="&#60;Data To Send&#62;"
+                Text="{Binding Path=SendData, Mode=OneWayToSource}"
+                Style="{StaticResource SubHeadline}" HorizontalTextAlignment="Start"
+                TextColor="#FF000000"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Welcome to dot net Multi platform Serial Tester U I" />
+            
+
+            <Button
+                FontSize="Medium"
+                IsEnabled="{Binding CanSend}"
+                WidthRequest="250"
+                x:Name="SendButton"
+                Text="Send" 
+                SemanticProperties.Hint="Sends the specified string"
+                Clicked="OnSendButtonClicked"
+                HorizontalOptions="Fill" />
+            
+            <Label
+                WidthRequest="250"
+                x:Name="ResponseLabel"
+                Text="{Binding Path=RcvData, StringFormat='{0}'}"
+                Style="{StaticResource SubHeadline}" HorizontalTextAlignment="Start"  />
+            
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
