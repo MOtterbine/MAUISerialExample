@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 
 namespace MAUIAppSerialExample;
@@ -15,18 +16,35 @@ public partial class MainPage : ContentPage
         _ = new Binding("SendData") { Source = this};
         _ = new Binding("RcvData") { Source = this };
         _ = new Binding("CanSend") { Source = this };
-        _ = new Binding("DeviceName") { Source = this };
+        _ = new Binding("SelectedDevice") { Source = this };
+        _ = new Binding("DeviceList") { Source = this };
+        _ = new Binding("SendCR") { Source = this };
+
+
+        // Assign a delegate for the device's event callback method
+        eventsCallback = this.OnDeviceEvent;
+
+        // Create a Communication Timeout (so we don't get stuck)
+        this._CommTimeoutHandler = this.OnCommTimeout;
+        _CommTimer = new System.Threading.Timer(_CommTimeoutHandler, null, Timeout.Infinite, Timeout.Infinite);
+
+        LoadDevices();
 
         //Bind the xaml to this class
         BindingContext = this;
 
-        // delegate to device event callback method
-        eventsCallback = this.OnDeviceEvent;
+    }
 
-        this._CommTimeoutHandler = this.OnCommTimeout;
-        _CommTimer = new System.Threading.Timer(_CommTimeoutHandler, null, Timeout.Infinite, Timeout.Infinite);
-
-
+    private void LoadDevices()
+    {
+        var j = serialService as IDevicesService;
+        if (j == null) return;
+        this.DeviceList = j.GetDeviceList();
+        OnPropertyChanged("DeviceList");
+        // Get the last-set device values - if any
+        var storedDeviceName = Preferences.Default.Get(Constants.SETTINGS_DEVICE_NAME, string.Empty);
+        // Search the list of available devices for the name
+        this.SelectedDevice = this.DeviceList.Where(d => string.Compare(d, storedDeviceName) == 0).FirstOrDefault();
     }
 
     ICommunicationDevice serialService = (new MAUI_SerialDevice() as ICommunicationDevice);
@@ -43,17 +61,40 @@ public partial class MainPage : ContentPage
     }
     private bool _canSend = true;
     public string SendData { get; set; } = String.Empty;
-    public string DeviceName
+
+    public bool SendCR
     {
-        get => deviceName; 
+        get => sendCR;
         set
         {
-            deviceName = value;
-            Preferences.Set(Constants.SETTINGS_DEVICE_NAME, value);
-            OnPropertyChanged("DeviceName");
+            // update the value and notify the xaml
+            if (sendCR == value) return;
+            sendCR = value;
+            Preferences.Default.Set(Constants.SETTINGS_SEND_CR, value);
+            OnPropertyChanged("SendCR");
         }
     }
-    private string deviceName = Preferences.Default.Get(Constants.SETTINGS_DEVICE_NAME, string.Empty);
+    private bool sendCR = Preferences.Default.Get(Constants.SETTINGS_SEND_CR, false);
+
+    public IList<String> DeviceList 
+    {
+        get; 
+        private set; 
+    }
+
+    public string SelectedDevice
+    {
+        get => selectedDeviceName; 
+        set
+        {
+            // Only set if value has changed
+            if (string.Compare(selectedDeviceName, value) == 0 || string.IsNullOrEmpty(value)) return;
+            selectedDeviceName = value;
+            Preferences.Default.Set(Constants.SETTINGS_DEVICE_NAME, value);
+            OnPropertyChanged("SelectedDevice");
+        }
+    }
+    private string selectedDeviceName = string.Empty;
     public string RcvData
     { 
         get => _rcvData; 
@@ -128,6 +169,11 @@ public partial class MainPage : ContentPage
     {
         switch (e.Event)
         {
+            case CommunicationEvents.Error:
+                RcvData = e.Description;
+                Console.WriteLine($"Error {e.Description}");
+                serialService.Close();
+                break;
             case CommunicationEvents.ConnectedAsClient:
                 Console.WriteLine($"Connected...");
                 break;
@@ -135,6 +181,7 @@ public partial class MainPage : ContentPage
                 // Disconnect Events Callback - we're closed
                 serialService.CommunicationEvent -= eventsCallback;
                 Console.WriteLine($"Disconnected...");
+                this.CanSend = true;
                 break;
             case CommunicationEvents.Receive:
             case CommunicationEvents.ReceiveEnd:
@@ -155,13 +202,18 @@ public partial class MainPage : ContentPage
                 // Transfer the entire stream of data
                 this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|>)", "\r");
                 
-
                 Console.WriteLine($"Data Received: {e.data.Length} bytes - {this.RcvData}.");
 
                 // Close 
                 serialService.Close();
                 CanSend = true;
 
+                // put the user right back on the data to send control
+                SendDataEntry.Focus();
+                if (!string.IsNullOrEmpty(SendData))
+                {
+                    SendDataEntry.SelectionLength = SendData.Length-1;
+                }
                 break;
         }
     }
@@ -188,7 +240,7 @@ public partial class MainPage : ContentPage
 
         if (deviceList == null || deviceList.Count < 1)
         {
-            // throw an exception, put up a message...
+            // throw an exception, put up a message - Do something!
             Console.WriteLine("No devices found");
             return;
         }
@@ -203,7 +255,6 @@ public partial class MainPage : ContentPage
         if (serialService.Open(validDeviceName))
         {
            
-
             // Clear out the data buffer
             this.rawStringData.Clear();
 
@@ -217,19 +268,34 @@ public partial class MainPage : ContentPage
 #endif
 
     }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        LoadDevices();
+        //OnPropertyChanged("DeviceList");
+    }
     /// <summary>
     ///  Begin the asychronous send process
     /// </summary>
     private void StartSendData()
     {
-        Dispatcher.Dispatch(() => { CanSend = false; });
-        // Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <STRING DATA>));
-        //                            or
-        // Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <BYTE [] DATA>));
 
-        // specific use case - notice the data sent (SendData) is bound to the entry
+        // Disables controls and updates UI-thread about it
+        Dispatcher.Dispatch(() => { 
+            CanSend = false;
+            RcvData = string.Empty;
+        });
+
+        // Reset the timer and send without waiting...
         ResetCommTimout();
-        Task.Factory.StartNew(() => TestSerial(DeviceName, $"{SendData}\r"));
+        Task.Factory.StartNew(() => TestSerial(SelectedDevice, $"{SendData}{(SendCR?"\r":string.Empty)}"));
+
+        /* TWO WAYS (method overloads) TO SEND DATA
+         Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <STRING DATA>));
+                                    or
+         Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <BYTE [] DATA>));
+        */
     }
     private void OnSendButtonClicked(object sender, EventArgs e)
     {

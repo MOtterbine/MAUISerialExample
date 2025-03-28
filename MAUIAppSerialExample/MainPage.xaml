@@ -6,33 +6,46 @@
 
     <ScrollView>
         <VerticalStackLayout
-            Padding="30"
-            Spacing="25">
+            Padding="30,50,30,30"
+            Spacing="15">
 
+            <!-- Main Title -->
+            <VerticalStackLayout>
             <Label
-                Text="{OnPlatform WinUI='MAUI Windows Serial/Bluetooth Tester', Android='MAUI Android Bluetooth Tester'}"
-                Style="{StaticResource Headline}"
+                Text="{OnPlatform WinUI='MAUI Serial/Bluetooth Tester', Android='MAUI Bluetooth Tester'}"
+                Style="{StaticResource SubHeadline}" FontSize="26" Margin="0" Padding="0"
                 SemanticProperties.HeadingLevel="Level1" />
 
             <Label
-                Text=".NET Multi-platform App"
-                Style="{StaticResource SubHeadline}"
-                SemanticProperties.HeadingLevel="Level2"
-                SemanticProperties.Description="Welcome to dot net Multi platform Serial Tester U I" />
-            
-            <Entry
+                Text="{OnPlatform WinUI='for Windows', Android='for Android'}"
+                Style="{StaticResource SubHeadline}" Margin="0" Padding="0"
+                SemanticProperties.HeadingLevel="Level1" />
+                
+            </VerticalStackLayout>
+            <!-- List of Devices -->
+            <Picker 
+                
+                Background="#11000000"
+                    
                 IsEnabled="{Binding CanSend}"
-                x:Name="DeviceNameEntry"
+                Title="Device List" FontAttributes="Bold" 
+                ItemsSource="{Binding DeviceList}" WidthRequest="250"
+                SelectedItem="{Binding SelectedDevice}"/>
+
+
+            <!-- Selected Device (Device Name) -->
+            <Entry
+                IsEnabled="{Binding CanSend}" IsVisible="False"
                 Background="#11000000"
                 WidthRequest="250"
                 Placeholder="&#60;Device Name&#62;"
-                Text="{Binding Path=DeviceName}"
+                Text="{Binding SelectedDevice}"
                 Style="{StaticResource SubHeadline}" HorizontalTextAlignment="Start"
                 TextColor="#FF000000"
                 SemanticProperties.HeadingLevel="Level2"
-                SemanticProperties.Description="Device Name" />
+                SemanticProperties.Description="Selected Device Name" />
 
-
+            <!-- String to Send -->
             <Entry
                 Completed="SendDataEntry_Completed"
                 IsEnabled="{Binding CanSend}"
@@ -44,8 +57,17 @@
                 Style="{StaticResource SubHeadline}" HorizontalTextAlignment="Start"
                 TextColor="#FF000000"
                 SemanticProperties.HeadingLevel="Level2"
-                SemanticProperties.Description="Welcome to dot net Multi platform Serial Tester U I" />
+                SemanticProperties.Description="Send Data" />
+            <!-- CR Checkbox -->
+            <HorizontalStackLayout WidthRequest="250">
+                <CheckBox  VerticalOptions="Center"
+                    IsChecked="{Binding SendCR}"
+                    IsEnabled="{Binding CanSend}" />
+                <Label VerticalTextAlignment="Center">Send Carriage Return</Label>
+                
+            </HorizontalStackLayout>
 
+            <!-- Send Button -->
             <Button
                 FontSize="Medium"
                 IsEnabled="{Binding CanSend}"
@@ -56,11 +78,14 @@
                 Clicked="OnSendButtonClicked"
                 HorizontalOptions="Fill" />
             
-            <Label
-                WidthRequest="250"
-                x:Name="ResponseLabel"
+            <!-- Receive Data displayed as string -->
+            <Label HorizontalTextAlignment="Start" Padding="0" Margin="0">Response</Label>
+            <Frame BorderColor="#55000000" Margin="0" Padding="5">
+            <Label 
+                MinimumHeightRequest="100"
                 Text="{Binding Path=RcvData, StringFormat='{0}'}"
-                Style="{StaticResource SubHeadline}" HorizontalTextAlignment="Start"  />
+                Style="{StaticResource RcvDataStyle}"  />
+            </Frame>
             
         </VerticalStackLayout>
     </ScrollView>

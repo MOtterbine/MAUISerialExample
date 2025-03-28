@@ -61,6 +61,20 @@ public static class MauiProgram
                     });
                 });
 #endif
+
+
+                         Microsoft.Maui.Handlers.PickerHandler.Mapper.AppendToMapping("PickerHandlerCustomization", (handler, view) =>
+                         {
+
+#if ANDROID
+          //  handler.PlatformView.SetPadding(10,10,10,10);  
+#elif WINDOWS
+                             handler.PlatformView.FontWeight = new Windows.UI.Text.FontWeight(1000);  
+#endif
+
+                         });
+
+
                      });
 
 

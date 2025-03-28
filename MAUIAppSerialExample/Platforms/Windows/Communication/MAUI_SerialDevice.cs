@@ -55,7 +55,7 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
         }
     }
 
-    public uint BaudRate { get; set; } = 9600;
+    public uint BaudRate { get; set; } = 38400;
 
     public SerialHandshake Handshake
     {
