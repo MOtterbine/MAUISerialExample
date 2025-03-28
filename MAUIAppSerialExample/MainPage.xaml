@@ -10,7 +10,7 @@
             Spacing="25">
 
             <Label
-                Text="MAUI Serial Tester!"
+                Text="{OnPlatform WinUI='MAUI Windows Serial/Bluetooth Tester', Android='MAUI Android Bluetooth Tester'}"
                 Style="{StaticResource Headline}"
                 SemanticProperties.HeadingLevel="Level1" />
 
@@ -19,6 +19,20 @@
                 Style="{StaticResource SubHeadline}"
                 SemanticProperties.HeadingLevel="Level2"
                 SemanticProperties.Description="Welcome to dot net Multi platform Serial Tester U I" />
+            
+            <Entry
+                IsEnabled="{Binding CanSend}"
+                x:Name="DeviceNameEntry"
+                Background="#11000000"
+                WidthRequest="250"
+                Placeholder="&#60;Device Name&#62;"
+                Text="{Binding Path=DeviceName}"
+                Style="{StaticResource SubHeadline}" HorizontalTextAlignment="Start"
+                TextColor="#FF000000"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Device Name" />
+
+
             <Entry
                 Completed="SendDataEntry_Completed"
                 IsEnabled="{Binding CanSend}"
@@ -31,7 +45,6 @@
                 TextColor="#FF000000"
                 SemanticProperties.HeadingLevel="Level2"
                 SemanticProperties.Description="Welcome to dot net Multi platform Serial Tester U I" />
-            
 
             <Button
                 FontSize="Medium"

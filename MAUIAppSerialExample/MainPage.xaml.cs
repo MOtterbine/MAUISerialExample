@@ -15,12 +15,18 @@ public partial class MainPage : ContentPage
         _ = new Binding("SendData") { Source = this};
         _ = new Binding("RcvData") { Source = this };
         _ = new Binding("CanSend") { Source = this };
+        _ = new Binding("DeviceName") { Source = this };
 
         //Bind the xaml to this class
         BindingContext = this;
 
         // delegate to device event callback method
         eventsCallback = this.OnDeviceEvent;
+
+        this._CommTimeoutHandler = this.OnCommTimeout;
+        _CommTimer = new System.Threading.Timer(_CommTimeoutHandler, null, Timeout.Infinite, Timeout.Infinite);
+
+
     }
 
     ICommunicationDevice serialService = (new MAUI_SerialDevice() as ICommunicationDevice);
@@ -37,6 +43,17 @@ public partial class MainPage : ContentPage
     }
     private bool _canSend = true;
     public string SendData { get; set; } = String.Empty;
+    public string DeviceName
+    {
+        get => deviceName; 
+        set
+        {
+            deviceName = value;
+            Preferences.Set(Constants.SETTINGS_DEVICE_NAME, value);
+            OnPropertyChanged("DeviceName");
+        }
+    }
+    private string deviceName = Preferences.Default.Get(Constants.SETTINGS_DEVICE_NAME, string.Empty);
     public string RcvData
     { 
         get => _rcvData; 
@@ -64,6 +81,45 @@ public partial class MainPage : ContentPage
 
     }
 
+    private TimerCallback _CommTimeoutHandler = null;
+
+    private Timer _CommTimer = null;
+    protected void OnCommTimeout(object sender)
+    {
+        this.rawStringData.Clear();
+
+        this.RcvData = Constants.DEVICE_NO_RESPONSE;
+        Console.WriteLine($"Timeout - {Constants.DEVICE_NO_RESPONSE}");
+
+        // Close 
+        serialService.Close();
+        CanSend = true;
+
+    }
+    private int _RetryCounter = 0;
+
+    /// <summary>
+    /// Starts and enables RX timeout timer
+    /// </summary>
+    private void ResetCommTimout(bool clearRetries = true)
+    {
+        // Reset RX timeout timer
+        this._CommTimer.Change(Constants.DEFAULT_COMM_NO_RESPONSE_TIMEOUT, Constants.DEFAULT_COMM_NO_RESPONSE_TIMEOUT);
+
+        if (!clearRetries) return;
+        this._RetryCounter = 0;
+    }
+    /// <summary>
+    /// Stops RX timeout timer
+    /// </summary>
+    private void CancelCommTimout()
+    {
+        // Clear out the data buffer
+        // Reset RX timeout timer
+        this._CommTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        this._RetryCounter = 0;
+    }
+
     protected StringBuilder rawStringData = new StringBuilder();
 
     DeviceEvent eventsCallback = null;
@@ -82,21 +138,23 @@ public partial class MainPage : ContentPage
                 break;
             case CommunicationEvents.Receive:
             case CommunicationEvents.ReceiveEnd:
+
                 // collect any incoming data
                 this.rawStringData.Append(Encoding.UTF8.GetString(e.data));
 
                 // Test for the end of data character, here it is '>'
                 if (e.data[e.data.Length - 1] != '>')
                 {
+                    // incomplete response, give it more time
+                    ResetCommTimout();
                     return;
                 }
+                // Complete response received, stop the timer
+                CancelCommTimout();
 
                 // Transfer the entire stream of data
-
                 this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|>)", "\r");
                 
-                // Clear out the data buffer
-                this.rawStringData.Clear();
 
                 Console.WriteLine($"Data Received: {e.data.Length} bytes - {this.RcvData}.");
 
@@ -108,14 +166,11 @@ public partial class MainPage : ContentPage
         }
     }
 
-
-
     private async Task TestSerial(string deviceName, string data)
     {
 
 #if ANDROID || WINDOWS
         if (serialService == null) throw new NullReferenceException("Failed to instantiate a valid ICommunicationDevice");
-
 
         // Attach Events Callback before opening
         serialService.CommunicationEvent += eventsCallback;
@@ -147,7 +202,10 @@ public partial class MainPage : ContentPage
         }
         if (serialService.Open(validDeviceName))
         {
-            CanSend = false;
+           
+
+            // Clear out the data buffer
+            this.rawStringData.Clear();
 
             // SEND THE DATA
             await serialService.Send(data);
@@ -164,13 +222,14 @@ public partial class MainPage : ContentPage
     /// </summary>
     private void StartSendData()
     {
-
+        Dispatcher.Dispatch(() => { CanSend = false; });
         // Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <STRING DATA>));
         //                            or
         // Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <BYTE [] DATA>));
 
         // specific use case - notice the data sent (SendData) is bound to the entry
-        Task.Factory.StartNew(() => TestSerial("OBDII", $"{SendData}\r"));
+        ResetCommTimout();
+        Task.Factory.StartNew(() => TestSerial(DeviceName, $"{SendData}\r"));
     }
     private void OnSendButtonClicked(object sender, EventArgs e)
     {
