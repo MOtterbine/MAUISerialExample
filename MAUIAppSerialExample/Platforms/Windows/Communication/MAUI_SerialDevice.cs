@@ -402,7 +402,7 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
 
     public IList<string> GetDeviceList()
     {
-        return(devicesInfoList == null)?null:(IList<string>)this.devicesInfoList.ToList().ConvertAll(d => d.Name).Distinct().ToList();
+        return (IList<string>)this.devicesInfoList.ToList().ConvertAll(d => d.Name).Distinct().ToList();
     }
 
     #endregion

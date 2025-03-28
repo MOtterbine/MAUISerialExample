@@ -2,7 +2,6 @@
 using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
-using Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific;
 
 namespace MAUIAppSerialExample;
 
@@ -10,12 +9,6 @@ namespace MAUIAppSerialExample;
 public class MainActivity : MauiAppCompatActivity
 {
     App pApp = ((App)App.Current);
-    public MainActivity()
-    {
-        // helps with text keyboard - screen becomes scroleable when keyboard is open
-        pApp.On<Microsoft.Maui.Controls.PlatformConfiguration.Android>().UseWindowSoftInputModeAdjust(WindowSoftInputModeAdjust.Resize);
-
-    }
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -48,8 +41,8 @@ public class MainActivity : MauiAppCompatActivity
         }
         else
         {
-            pApp.HasPermissions = true;
-            pApp.FirePermissionsReadyEvent();
+            //pApp.HasPermissions = true;
+            //pApp.FirePermissionsReadyEvent();
         }
 
     }
@@ -68,13 +61,13 @@ public class MainActivity : MauiAppCompatActivity
                 {
                     if (grantResults[0] == 0) // good permission - this is a sdk 31, or higher, device
                     {
-                        pApp.HasPermissions = true;
-                        pApp.FirePermissionsReadyEvent();
+                        //pApp.HasPermissions = true;
+                        //pApp.FirePermissionsReadyEvent();
                         return;
                     }
                 }
-                pApp.HasPermissions = false; // No device permissions at all...
-                pApp.FirePermissionsReadyEvent();
+                //pApp.HasPermissions = false; // No device permissions at all...
+                //pApp.FirePermissionsReadyEvent();
                 break;
         }
 
