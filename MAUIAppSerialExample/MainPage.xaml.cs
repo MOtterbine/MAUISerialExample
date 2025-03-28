@@ -8,6 +8,8 @@ namespace MAUIAppSerialExample;
 public partial class MainPage : ContentPage
 {
     int count = 0;
+    App pApp = ((App)App.Current);
+
     public MainPage()
     {
         InitializeComponent();
@@ -28,15 +30,25 @@ public partial class MainPage : ContentPage
         this._CommTimeoutHandler = this.OnCommTimeout;
         _CommTimer = new System.Threading.Timer(_CommTimeoutHandler, null, Timeout.Infinite, Timeout.Infinite);
 
-        LoadDevices();
 
         //Bind the xaml to this class
         BindingContext = this;
 
+        pApp.PermissionsReadyEvent += PApp_PermissionsReadyEvent;
+
+    }
+
+    private void PApp_PermissionsReadyEvent(object sender, EventArgs e)
+    {
+        if (!pApp.HasPermissions) return;
+        LoadDevices();
+        OnPropertyChanged("CanSend");
     }
 
     private void LoadDevices()
     {
+
+        if (!pApp.HasPermissions) throw new PermissionException("LoadDevices() - User is not permitted to access device");
         var j = serialService as IDevicesService;
         if (j == null) return;
         this.DeviceList = j.GetDeviceList();
@@ -51,7 +63,7 @@ public partial class MainPage : ContentPage
 
     public bool CanSend 
     {
-        get => _canSend;
+        get => _canSend && pApp.HasPermissions;
         set
         {
             // update the value and notify the xaml
@@ -127,6 +139,7 @@ public partial class MainPage : ContentPage
     private Timer _CommTimer = null;
     protected void OnCommTimeout(object sender)
     {
+        CancelCommTimout();
         this.rawStringData.Clear();
 
         this.RcvData = Constants.DEVICE_NO_RESPONSE;
@@ -170,6 +183,7 @@ public partial class MainPage : ContentPage
         switch (e.Event)
         {
             case CommunicationEvents.Error:
+                CancelCommTimout();
                 RcvData = e.Description;
                 Console.WriteLine($"Error {e.Description}");
                 serialService.Close();
@@ -199,8 +213,8 @@ public partial class MainPage : ContentPage
                 // Complete response received, stop the timer
                 CancelCommTimout();
 
-                // Transfer the entire stream of data
-                this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|>)", "\r");
+                // Transfer the entire stream of data, with '\r' trimmed from the edges
+                this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|>)", "\r").Trim('\r');
                 
                 Console.WriteLine($"Data Received: {e.data.Length} bytes - {this.RcvData}.");
 
@@ -208,8 +222,10 @@ public partial class MainPage : ContentPage
                 serialService.Close();
                 CanSend = true;
 
-                // put the user right back on the data to send control
+#if WINDOWS
+                // put the user right back on the data to send control - Great in Windows, but keyboard pops up on Android when focus goes to Entry
                 SendDataEntry.Focus();
+#endif
                 if (!string.IsNullOrEmpty(SendData))
                 {
                     SendDataEntry.SelectionLength = SendData.Length-1;
@@ -257,7 +273,10 @@ public partial class MainPage : ContentPage
            
             // Clear out the data buffer
             this.rawStringData.Clear();
-
+            // Reset the timer and send without waiting...
+            // Reset RX timeout timer - for a connection
+            //this._CommTimer.Change(Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT, Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT);
+            ResetCommTimout();
             // SEND THE DATA
             await serialService.Send(data);
         }
@@ -272,7 +291,7 @@ public partial class MainPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        LoadDevices();
+        if(pApp.HasPermissions) LoadDevices();
         //OnPropertyChanged("DeviceList");
     }
     /// <summary>
@@ -280,6 +299,11 @@ public partial class MainPage : ContentPage
     /// </summary>
     private void StartSendData()
     {
+        if(String.IsNullOrEmpty(SelectedDevice))
+        {
+            RcvData = "No Device Selected";
+            return;
+        }
 
         // Disables controls and updates UI-thread about it
         Dispatcher.Dispatch(() => { 
@@ -288,7 +312,8 @@ public partial class MainPage : ContentPage
         });
 
         // Reset the timer and send without waiting...
-        ResetCommTimout();
+        // Reset RX timeout timer - for a connection
+        //this._CommTimer.Change(Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT, Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT);
         Task.Factory.StartNew(() => TestSerial(SelectedDevice, $"{SendData}{(SendCR?"\r":string.Empty)}"));
 
         /* TWO WAYS (method overloads) TO SEND DATA

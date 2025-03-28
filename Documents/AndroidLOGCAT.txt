@@ -1,0 +1,12 @@
+To pull out a crash log after the fact(release)
+
+find adb.exe (ex. C:\Program Files (x86)\Android\android-sdk\platform-tools\adb.exe)
+
+adb logcat --buffer=crash
+
+adb logcat --clear
+
+adb logcat --help
+
+// filter by tag, other silent - tag is arbitrary, entered at the time of log entry
+adb logcat OSOBDII *:S
