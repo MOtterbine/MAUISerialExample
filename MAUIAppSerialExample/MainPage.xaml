@@ -81,10 +81,11 @@
             <!-- Receive Data displayed as string -->
             <Label HorizontalTextAlignment="Start" Padding="0" Margin="0">Response</Label>
             <Frame BorderColor="#55000000" Margin="0" Padding="5">
-            <Label 
-                MinimumHeightRequest="100"
-                Text="{Binding Path=RcvData, StringFormat='{0}'}"
-                Style="{StaticResource RcvDataStyle}"  />
+                <ScrollView HeightRequest="200">
+                    <Label Padding="0" Margin="5" 
+                        Text="{Binding RcvData, StringFormat='{0}'}" 
+                        Style="{StaticResource RcvDataStyle}"  />
+                </ScrollView>
             </Frame>
             
         </VerticalStackLayout>
