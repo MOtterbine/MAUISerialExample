@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace MAUIAppSerialExample;
@@ -7,6 +8,8 @@ namespace MAUIAppSerialExample;
 
 public partial class MainPage : ContentPage
 {
+    public string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
     int count = 0;
     App pApp = ((App)App.Current);
 
@@ -21,6 +24,7 @@ public partial class MainPage : ContentPage
         _ = new Binding("SelectedDevice") { Source = this };
         _ = new Binding("DeviceList") { Source = this };
         _ = new Binding("SendCR") { Source = this };
+        _ = new Binding("Version") { Source = this };
 
 
         // Assign a delegate for the device's event callback method
@@ -187,6 +191,7 @@ public partial class MainPage : ContentPage
                 RcvData = e.Description;
                 Console.WriteLine($"Error {e.Description}");
                 serialService.Close();
+                CanSend = true;
                 break;
             case CommunicationEvents.ConnectedAsClient:
                 Console.WriteLine($"Connected...");
@@ -214,7 +219,7 @@ public partial class MainPage : ContentPage
                 CancelCommTimout();
 
                 // Transfer the entire stream of data, with '\r' trimmed from the edges
-                this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|>)", "\r").Trim('\r');
+                this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|>)", $"{Environment.NewLine}").Trim(Environment.NewLine.ToArray()[0]);
                 
                 Console.WriteLine($"Data Received: {e.data.Length} bytes - {this.RcvData}.");
 
@@ -243,29 +248,34 @@ public partial class MainPage : ContentPage
         // Attach Events Callback before opening
         serialService.CommunicationEvent += eventsCallback;
 
-        // Get a list of paired devices to validate the device name 
-        IList<string> deviceList = null;
-        if (serialService is IDevicesService == null)
+        if (this.DeviceList == null || this.DeviceList.Count < 1)
         {
-            deviceList = new List<string>(); // empty, but not null
-        }
-        else
-        {
-            deviceList = (serialService as IDevicesService).GetDeviceList();
-        }
-
-        if (deviceList == null || deviceList.Count < 1)
-        {
-            // throw an exception, put up a message - Do something!
-            Console.WriteLine("No devices found");
+            Console.WriteLine("Error: No Devices Found");
             return;
         }
+
+        //// Get a list of paired devices to validate the device name 
+        //IList<string> deviceList = null;
+        //if (serialService is IDevicesService == null)
+        //{
+        //    deviceList = new List<string>(); // empty, but not null
+        //}
+        //else
+        //{
+        //    deviceList = (serialService as IDevicesService).GetDeviceList();
+        //}
+
+        //if (deviceList == null || deviceList.Count < 1)
+        //{
+        //    // throw an exception, put up a message - Do something!
+        //    Console.WriteLine("No devices found");
+        //    return;
+        //}
         // Ensure the name to be used is in the list of available devices
-        var validDeviceName = deviceList.Where(i => i.CompareTo(deviceName) == 0).FirstOrDefault();
+        var validDeviceName = DeviceList.Where(i => i.CompareTo(deviceName) == 0).FirstOrDefault();
         if (string.IsNullOrEmpty(validDeviceName))
         {
             Console.WriteLine($"Device {deviceName} not found in list.");
-
             return;
         }
         if (serialService.Open(validDeviceName))
@@ -310,11 +320,13 @@ public partial class MainPage : ContentPage
             CanSend = false;
             RcvData = string.Empty;
         });
-
+        // Start a connect timeout 
+        this._CommTimer.Change(Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT, Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT);
         // Reset the timer and send without waiting...
         // Reset RX timeout timer - for a connection
         //this._CommTimer.Change(Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT, Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT);
-        Task.Factory.StartNew(() => TestSerial(SelectedDevice, $"{SendData}{(SendCR?"\r":string.Empty)}"));
+        //Task serialTask = TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r" : string.Empty)}");
+        Task.Factory.StartNew(()=> TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r" : string.Empty)}"));
 
         /* TWO WAYS (method overloads) TO SEND DATA
          Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <STRING DATA>));

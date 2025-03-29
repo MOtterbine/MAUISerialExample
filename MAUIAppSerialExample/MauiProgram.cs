@@ -67,9 +67,13 @@ public static class MauiProgram
                          {
 
 #if ANDROID
-          //  handler.PlatformView.SetPadding(10,10,10,10);  
+            //    handler.PlatformView.Focusable = false;
+                //handler.PlatformView.ShowSoftInputOnFocus = false;
+                handler.PlatformView.SetPadding(15,15,15,15);  
+#elif IOS || MACCATALYST
+
 #elif WINDOWS
-                             handler.PlatformView.FontWeight = new Windows.UI.Text.FontWeight(1000);  
+                             handler.PlatformView.FontWeight = new Windows.UI.Text.FontWeight(700);  
 #endif
 
                          });
@@ -77,8 +81,23 @@ public static class MauiProgram
 
                      });
 
+        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("EntryCustomization", (handler, view) =>
+        {
+            if (view is Entry)
+            {
+#if ANDROID
+            //    handler.PlatformView.Focusable = false;
+                //handler.PlatformView.ShowSoftInputOnFocus = false;
+                handler.PlatformView.SetHeight(40);
+                handler.PlatformView.SetPaddingRelative(0,0,0,0);
+                handler.PlatformView.SetPadding(0, 0, 0, 0);
+#elif IOS || MACCATALYST
 
-
+#elif WINDOWS
+             //   handler.PlatformView.Padding = new Microsoft.UI.Xaml.Thickness(0);
+#endif
+            }
+        });
 
 
 #if DEBUG

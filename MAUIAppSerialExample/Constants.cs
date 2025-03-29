@@ -8,7 +8,7 @@ public class Constants
     public const int COMMUNICATION_WAIT_CONNECT_TIMEOUT = 5000;
     // this timeout is for waiting for an external response
     public const int DEFAULT_COMM_NO_RESPONSE_TIMEOUT =3500;
-    public const int MIN_WINDOW_HEIGHT_WINDOWS = 750;
+    public const int MIN_WINDOW_HEIGHT_WINDOWS = 780;
     public const int MIN_WINDOW_WIDTH_WINDOWS = 650;
     public const String DEVICE_NO_RESPONSE = "<No Respone>";
     public const String SERIAL_DEVICE_NAME = "OBDII";
