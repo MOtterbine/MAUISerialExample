@@ -50,7 +50,7 @@
                 <Entry
                     IsEnabled="{Binding CanSend}" IsVisible="False"
                     Background="#11000000"
-                    WidthRequest="235"
+                    WidthRequest="300"
                     Placeholder="&#60;Device Name&#62;"
                     Text="{Binding SelectedDevice}"
                     Style="{StaticResource SubHeadline}" HorizontalTextAlignment="Start"
@@ -58,7 +58,6 @@
                     SemanticProperties.HeadingLevel="Level2"
                     SemanticProperties.Description="Selected Device Name"/>
 
-                <HorizontalStackLayout HorizontalOptions="Center">
                     <!-- String to Send -->
                     <Entry
                         HeightRequest="50"
@@ -66,24 +65,31 @@
                         IsEnabled="{Binding CanSend}"
                         x:Name="SendDataEntry"
                         Background="#11000000"
-                        WidthRequest="235"
+                        WidthRequest="250"
                         Placeholder="&#60;Data To Send&#62;"
                         Text="{Binding Path=SendData, Mode=OneWayToSource}"
                         HorizontalTextAlignment="Start"
                         TextColor="#FF000000"
                         Style="{StaticResource SubHeadline}"
                          />
+                <VerticalStackLayout HorizontalOptions="Center" WidthRequest="250" Spacing="0" Padding="0" Margin="0">
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="0" Padding="0" Margin="0">
+                        <Label VerticalTextAlignment="Center" Padding="0" Margin="0"  HorizontalOptions="FillAndExpand"
+                               Text="Send CR" HorizontalTextAlignment="Start" />
+                        
                     <!-- CR Checkbox -->
-                    <VerticalStackLayout WidthRequest="65" Padding="0" Margin="0">
-                        <CheckBox  VerticalOptions="Start" HorizontalOptions="Center"
+                        <CheckBox  VerticalOptions="Center" HorizontalOptions="Start"
                                    Margin="0"
                             IsChecked="{Binding SendCR}"
                             IsEnabled="{Binding CanSend}" />
-                        <Label VerticalTextAlignment="Start" Padding="0" Margin="0" 
-                               Text="Send CR" HorizontalTextAlignment="Center" />
-                
-                    </VerticalStackLayout>
-                </HorizontalStackLayout>
+                        <!-- Rx EOT Character -->
+                        <Label VerticalTextAlignment="Center" Padding="5,0" Margin="0"  HorizontalOptions="FillAndExpand"
+                               Text="Rx EOT Character" HorizontalTextAlignment="Start" />
+
+                        <Entry Text="{Binding EOTCharacterString}" Background="#11000000" IsEnabled="{Binding CanSend}" MaxLength="1"></Entry>
+                    </HorizontalStackLayout>
+
+                </VerticalStackLayout>
                 
                 <!-- Send Button -->
                 <Button

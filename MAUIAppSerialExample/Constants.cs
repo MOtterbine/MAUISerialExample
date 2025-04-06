@@ -16,5 +16,6 @@ public class Constants
     public const String DEVICE_NOT_CONNECTED = "** Device is not connected or invalid ***";
     public const String SETTINGS_DEVICE_NAME = "selected_device_name";
     public const String SETTINGS_SEND_CR = "send_cr";
+    public const String SETTINGS_EOT_CHARACTER = "eot_char";
 
 }

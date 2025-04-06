@@ -313,8 +313,8 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
     public bool Close()
     {
         // stops the listen thread...
-        this.cancellationTokenSource?.Cancel();
         this.IsConnected = false;
+        this.cancellationTokenSource?.Cancel();
         return true;
     }
 

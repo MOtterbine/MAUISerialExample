@@ -15,6 +15,9 @@ public partial class MainPage : ContentPage
 
     public MainPage()
     {
+
+       // Preferences.Default.Clear();
+
         InitializeComponent();
 
         // Create CODE-BEHIND Bindings
@@ -25,6 +28,10 @@ public partial class MainPage : ContentPage
         _ = new Binding("DeviceList") { Source = this };
         _ = new Binding("SendCR") { Source = this };
         _ = new Binding("Version") { Source = this };
+        _ = new Binding("EOTCharacterString") { Source = this };
+
+           EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, "\r");;
+
 
 
         // Assign a delegate for the device's event callback method
@@ -40,6 +47,8 @@ public partial class MainPage : ContentPage
 
         pApp.PermissionsReadyEvent += PApp_PermissionsReadyEvent;
 
+
+        EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, "\r"); ;
     }
 
     private void PApp_PermissionsReadyEvent(object sender, EventArgs e)
@@ -64,6 +73,28 @@ public partial class MainPage : ContentPage
     }
 
     ICommunicationDevice serialService = (new MAUI_SerialDevice() as ICommunicationDevice);
+
+
+    public string EOTCharacterString
+    {
+        get
+        {
+
+           // if (char.IsWhiteSpace(this._EOTCharacter)) return $"{((byte)this._EOTCharacter):X02}";
+            return $"{this._EOTCharacter}";
+        }
+        set
+        {
+            if(!char.TryParse(value, out this._EOTCharacter))
+            {
+                return;
+            }
+            Preferences.Default.Set(Constants.SETTINGS_EOT_CHARACTER, value);
+            OnPropertyChanged("EOTCharacterString");
+        }
+    }
+    private string _EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, ">");
+    private char _EOTCharacter = '>';
 
     public bool CanSend 
     {
@@ -135,7 +166,7 @@ public partial class MainPage : ContentPage
 
 #endif
 
-
+        OnPropertyChanged("EOTCharacterString");
     }
 
     private TimerCallback _CommTimeoutHandler = null;
@@ -149,9 +180,8 @@ public partial class MainPage : ContentPage
         this.RcvData = Constants.DEVICE_NO_RESPONSE;
         Console.WriteLine($"Timeout - {Constants.DEVICE_NO_RESPONSE}");
 
-        // Close 
-        serialService.Close();
-        CanSend = true;
+        // Close - controls changed via the device event callback
+        serialService.Close(); 
 
     }
     private int _RetryCounter = 0;
@@ -209,7 +239,7 @@ public partial class MainPage : ContentPage
                 this.rawStringData.Append(Encoding.UTF8.GetString(e.data));
 
                 // Test for the end of data character, here it is '>'
-                if (e.data[e.data.Length - 1] != '>')
+                if (e.data[e.data.Length - 1] != _EOTCharacter)
                 {
                     // incomplete response, give it more time
                     ResetCommTimout();
@@ -219,7 +249,7 @@ public partial class MainPage : ContentPage
                 CancelCommTimout();
 
                 // Transfer the entire stream of data, with '\r' trimmed from the edges
-                this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|>)", $"{Environment.NewLine}").Trim(Environment.NewLine.ToArray()[0]);
+                this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @$"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|{_EOTCharacter})", $"{Environment.NewLine}").Trim(Environment.NewLine.ToArray()[0]);
                 
                 Console.WriteLine($"Data Received: {e.data.Length} bytes - {this.RcvData}.");
 
@@ -284,8 +314,6 @@ public partial class MainPage : ContentPage
             // Clear out the data buffer
             this.rawStringData.Clear();
             // Reset the timer and send without waiting...
-            // Reset RX timeout timer - for a connection
-            //this._CommTimer.Change(Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT, Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT);
             ResetCommTimout();
             // SEND THE DATA
             await serialService.Send(data);
