@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -12,6 +13,22 @@ public partial class MainPage : ContentPage
 
     int count = 0;
     App pApp = ((App)App.Current);
+
+    public List<UInt32> BaudRates => MAUIAppSerialExample.BaudRates.Items;
+
+    private UInt32 serialBaudRate = Convert.ToUInt32(Preferences.Get(Constants.PREFS_SERIAL_BAUD_RATE, (uint)9600));
+    public UInt32 SerialBaudRate
+    {
+        get { return serialBaudRate; }
+        set
+        {
+            this.serialBaudRate = value;
+            OnPropertyChanged("SerialBaudRate");
+            Preferences.Set(Constants.PREFS_SERIAL_BAUD_RATE, value);
+
+        }
+    }
+
 
     public MainPage()
     {
@@ -29,8 +46,11 @@ public partial class MainPage : ContentPage
         _ = new Binding("SendCR") { Source = this };
         _ = new Binding("Version") { Source = this };
         _ = new Binding("EOTCharacterString") { Source = this };
+        _ = new Binding("SerialBaudRate") { Source = this };
+        _ = new Binding("CheckForEOT") { Source = this };
+        _ = new Binding("ExpectResponse") { Source = this };
 
-           EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, "\r");;
+           EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, ">");;
 
 
 
@@ -48,9 +68,12 @@ public partial class MainPage : ContentPage
         pApp.PermissionsReadyEvent += PApp_PermissionsReadyEvent;
 
 
-        EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, "\r"); ;
+        EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, ">"); ;
     }
 
+
+
+    
     private void PApp_PermissionsReadyEvent(object sender, EventArgs e)
     {
         if (!pApp.HasPermissions) return;
@@ -122,6 +145,33 @@ public partial class MainPage : ContentPage
         }
     }
     private bool sendCR = Preferences.Default.Get(Constants.SETTINGS_SEND_CR, false);
+    public bool ExpectResponse
+    {
+        get => expectResponse;
+        set
+        {
+            // update the value and notify the xaml
+            if (expectResponse == value) return;
+            expectResponse = value;
+            Preferences.Default.Set(Constants.PREFS_TEST_FOR_RESPONSE, value);
+            OnPropertyChanged("ExpectResponse");
+        }
+    }
+    private bool expectResponse = Preferences.Default.Get(Constants.PREFS_TEST_FOR_RESPONSE, false);
+
+    public bool ExpectEOT
+    {
+        get => expectEOT;
+        set
+        {
+            // update the value and notify the xaml
+            if (expectEOT == value) return;
+            expectEOT = value;
+            Preferences.Default.Set(Constants.PREFS_TEST_FOR_EOT, value);
+            OnPropertyChanged("ExpectResponse");
+        }
+    }
+    private bool expectEOT = Preferences.Default.Get(Constants.PREFS_TEST_FOR_EOT, false);
 
     public IList<String> DeviceList 
     {
@@ -178,10 +228,15 @@ public partial class MainPage : ContentPage
         this.rawStringData.Clear();
 
         this.RcvData = Constants.DEVICE_NO_RESPONSE;
-        Console.WriteLine($"Timeout - {Constants.DEVICE_NO_RESPONSE}");
+        Debug.WriteLine($"Timeout - {Constants.DEVICE_NO_RESPONSE}");
 
         // Close - controls changed via the device event callback
-        serialService.Close(); 
+        serialService.Close();
+        CanSend = true;
+#if WINDOWS
+        // put the user right back on the data to send control - Great in Windows, but keyboard pops up on Android when focus goes to Entry
+        Dispatcher.Dispatch(() => SendDataEntry.Focus());
+#endif
 
     }
     private int _RetryCounter = 0;
@@ -219,17 +274,17 @@ public partial class MainPage : ContentPage
             case CommunicationEvents.Error:
                 CancelCommTimout();
                 RcvData = e.Description;
-                Console.WriteLine($"Error {e.Description}");
+                Debug.WriteLine($"Error {e.Description}");
                 serialService.Close();
                 CanSend = true;
                 break;
             case CommunicationEvents.ConnectedAsClient:
-                Console.WriteLine($"Connected...");
+                Debug.WriteLine($"Connected...");
                 break;
             case CommunicationEvents.Disconnected:
                 // Disconnect Events Callback - we're closed
                 serialService.CommunicationEvent -= eventsCallback;
-                Console.WriteLine($"Disconnected...");
+                Debug.WriteLine($"Disconnected...");
                 this.CanSend = true;
                 break;
             case CommunicationEvents.Receive:
@@ -239,28 +294,54 @@ public partial class MainPage : ContentPage
                 this.rawStringData.Append(Encoding.UTF8.GetString(e.data));
 
                 // Test for the end of data character, here it is '>'
-                if (e.data[e.data.Length - 1] != _EOTCharacter)
+                if (ExpectEOT && ExpectResponse)
                 {
-                    // incomplete response, give it more time
-                    ResetCommTimout();
-                    return;
+                    if (e.data[e.data.Length - 1] != _EOTCharacter)
+                    {
+                        // incomplete response, give it more time
+                        ResetCommTimout();
+                        return;
+                    }
                 }
                 // Complete response received, stop the timer
                 CancelCommTimout();
 
-                // Transfer the entire stream of data, with '\r' trimmed from the edges
-                this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @$"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|{_EOTCharacter})", $"{Environment.NewLine}").Trim(Environment.NewLine.ToArray()[0]);
-                
-                Console.WriteLine($"Data Received: {e.data.Length} bytes - {this.RcvData}.");
+                // show binary of the byte specified
+                if (e.data != null)
+                {
+                    // NO EOT
+                    if (!ExpectEOT)
+                    {
+                        int i = 0;
+                        if (e.data.Length > 0)
+                        {
+                            // byte to binary (i.e. 01101100)
+                            // Set initial 
+                            this.RcvData = $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
+                        }
+                        i++;
+                        for (; i < e.data.Length; i++) // max 4 bytes
+                        {
+                            if (e.data[i] != null)
+                            {
+                                // byte to binary (i.e. 01101100)
+                                // Append...
+                                this.RcvData += $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // WITH EOT
+                        // Transfer the entire stream of data, with '\r' trimmed from the edges
+                        this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @$"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|{_EOTCharacter})", $"{Environment.NewLine}").Trim(Environment.NewLine.ToArray()[0]);
+                    }
 
-                // Close 
-                serialService.Close();
-                CanSend = true;
+                  //  Debug.WriteLine($"Data Received: {e.data.Length} bytes - {this.RcvData}.");
+                }
 
-#if WINDOWS
-                // put the user right back on the data to send control - Great in Windows, but keyboard pops up on Android when focus goes to Entry
-                SendDataEntry.Focus();
-#endif
+                CloseCommChannel(); // callback should set   CanSend = true
+
                 if (!string.IsNullOrEmpty(SendData))
                 {
                     SendDataEntry.SelectionLength = SendData.Length-1;
@@ -280,7 +361,7 @@ public partial class MainPage : ContentPage
 
         if (this.DeviceList == null || this.DeviceList.Count < 1)
         {
-            Console.WriteLine("Error: No Devices Found");
+            Debug.WriteLine("Error: No Devices Found");
             return;
         }
 
@@ -298,14 +379,14 @@ public partial class MainPage : ContentPage
         //if (deviceList == null || deviceList.Count < 1)
         //{
         //    // throw an exception, put up a message - Do something!
-        //    Console.WriteLine("No devices found");
+        //    Debug.WriteLine("No devices found");
         //    return;
         //}
         // Ensure the name to be used is in the list of available devices
         var validDeviceName = DeviceList.Where(i => i.CompareTo(deviceName) == 0).FirstOrDefault();
         if (string.IsNullOrEmpty(validDeviceName))
         {
-            Console.WriteLine($"Device {deviceName} not found in list.");
+            Debug.WriteLine($"Device {deviceName} not found in list.");
             return;
         }
         if (serialService.Open(validDeviceName))
@@ -313,23 +394,54 @@ public partial class MainPage : ContentPage
            
             // Clear out the data buffer
             this.rawStringData.Clear();
-            // Reset the timer and send without waiting...
-            ResetCommTimout();
+            if (ExpectResponse)
+            {
+                // Reset the timer and send without waiting...
+                ResetCommTimout();
+            }
             // SEND THE DATA
             await serialService.Send(data);
+            // Don't close if a response is expected. timeout will close if doesn't come
+            if (ExpectResponse)
+            {
+
+                return;
+            }
+
+            this.CloseCommChannel();
+#if WINDOWS
+            // put the user right back on the data to send control - Great in Windows, but keyboard pops up on Android when focus goes to Entry
+            Dispatcher.Dispatch(()=>SendDataEntry.Focus());
+#endif
+
         }
         else
         {
-            Console.WriteLine($"Unable to open device: {deviceName}.");
+            Debug.WriteLine($"Unable to open device: {deviceName}.");
         }
 #endif
 
     }
 
+    private void CloseCommChannel()
+    {
+#if WINDOWS
+        // put the user right back on the data to send control - Great in Windows, but keyboard pops up on Android when focus goes to Entry
+        Dispatcher.Dispatch(()=>SendDataEntry.Focus());
+#endif
+
+        if (serialService == null) return;
+        this.serialService.Close();
+        this.CanSend = true;
+    }
+
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        if(pApp.HasPermissions) LoadDevices();
+        if (!pApp.HasPermissions) return;
+        LoadDevices();
+
+        if (pApp.HasPermissions) LoadDevices();
         //OnPropertyChanged("DeviceList");
     }
     /// <summary>
@@ -348,13 +460,7 @@ public partial class MainPage : ContentPage
             CanSend = false;
             RcvData = string.Empty;
         });
-        // Start a connect timeout 
-        this._CommTimer.Change(Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT, Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT);
-        // Reset the timer and send without waiting...
-        // Reset RX timeout timer - for a connection
-        //this._CommTimer.Change(Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT, Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT);
-        //Task serialTask = TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r" : string.Empty)}");
-        Task.Factory.StartNew(()=> TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r" : string.Empty)}"));
+        Task.Factory.StartNew(()=> TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r\n" : string.Empty)}"));
 
         /* TWO WAYS (method overloads) TO SEND DATA
          Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <STRING DATA>));

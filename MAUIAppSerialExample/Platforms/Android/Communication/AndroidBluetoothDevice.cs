@@ -38,6 +38,7 @@ public partial class AndroidBluetoothDevice : ICommunicationDevice, IDevicesServ
 
     public IList<string> GetDeviceList()
     {
+        
         var btdevice = this.bluetoothAdapter?.BondedDevices.Select(d => d.Name).ToList();
         return btdevice;
     }

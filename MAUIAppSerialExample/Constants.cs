@@ -18,4 +18,8 @@ public class Constants
     public const String SETTINGS_SEND_CR = "send_cr";
     public const String SETTINGS_EOT_CHARACTER = "eot_char";
 
+    public const string PREFS_SERIAL_BAUD_RATE = "serial_baud";
+    public const string PREFS_TEST_FOR_EOT = "eot_test";
+    public const string PREFS_TEST_FOR_RESPONSE = "expect_response";
+
 }

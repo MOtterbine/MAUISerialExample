@@ -88,9 +88,9 @@ public static class MauiProgram
 #if ANDROID
             //    handler.PlatformView.Focusable = false;
                 //handler.PlatformView.ShowSoftInputOnFocus = false;
-                handler.PlatformView.SetHeight(40);
-                handler.PlatformView.SetPaddingRelative(0,0,0,0);
-                handler.PlatformView.SetPadding(0, 0, 0, 0);
+               // handler.PlatformView.SetHeight(40);
+                //handler.PlatformView.SetPaddingRelative(0,0,0,0);
+               // handler.PlatformView.SetPadding(0, 0, 0, 0);
 #elif IOS || MACCATALYST
 
 #elif WINDOWS
