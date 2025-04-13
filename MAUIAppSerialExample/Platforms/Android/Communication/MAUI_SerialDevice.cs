@@ -28,10 +28,9 @@ public partial class MAUI_SerialDevice : IDevicesService, ICommunicationDevice, 
     private List<ICommunicationDevice> deviceTypesList = new List<ICommunicationDevice>()
     {
         // Generic bluetooth devices
-        //new AndroidBluetoothDevice(), // Wireless Bluetooth
-        //new CH34X(),  // Wired CH340/342
-        //new CP21X(),   // Wired CP21XX
-        //new FTDI()   // Wired CP21XX
+        new AndroidBluetoothDevice(), // Wireless Bluetooth
+        new CH34X(),  // Wired CH340/342
+        new CP21X(),   // Wired CP21XX
         new USBSerial_FTDI()   // Wired FTDI
     };
     public ICommunicationDevice CurrentDevice { get; private set; }
