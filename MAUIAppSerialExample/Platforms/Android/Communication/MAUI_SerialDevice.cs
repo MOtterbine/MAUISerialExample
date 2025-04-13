@@ -1,22 +1,65 @@
-﻿namespace MAUIAppSerialExample;
+﻿
+namespace MAUIAppSerialExample;
 
-public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService
+/// <summary>
+/// Facade class that combines bluetooth and usb devices into a single interface
+/// </summary>
+public partial class MAUI_SerialDevice : IDevicesService, ICommunicationDevice, ISerialDevice
 {
     private CancellationTokenSource tokenSource = null;
 
+    public uint BaudRate
+    {
+        get 
+        {
+            if (!(CurrentDevice is ISerialDevice)) return 9600;
+            return (CurrentDevice as ISerialDevice).BaudRate;
+        }
+        set
+        {
+            if (CurrentDevice is ISerialDevice)
+            {
+                (CurrentDevice as ISerialDevice).BaudRate = value;
+            }
+        }
+    }
+
+    // Supported devices
+    private List<ICommunicationDevice> deviceTypesList = new List<ICommunicationDevice>()
+    {
+        // Generic bluetooth devices
+        //new AndroidBluetoothDevice(), // Wireless Bluetooth
+        //new CH34X(),  // Wired CH340/342
+        //new CP21X(),   // Wired CP21XX
+        //new FTDI()   // Wired CP21XX
+        new USBSerial_FTDI()   // Wired FTDI
+    };
+    public ICommunicationDevice CurrentDevice { get; private set; }
 
     public MAUI_SerialDevice()
     {
 
     }
 
-    private AndroidBluetoothDevice _currentDevice = new AndroidBluetoothDevice();
-    public IList<string> GetDeviceList() => _currentDevice.GetDeviceList();
+    public IList<string> GetDeviceList()
+    {
+        IList<string> retList = new List<string>();
+        // Iterate each type of device
+        foreach (IDevicesService cdev in this.deviceTypesList)
+        {
+            // iterate instances of this type - each device
+            foreach(string s in cdev.GetDeviceList())
+            {
+                retList.Add(s);
+            }
+        }
+        return retList;
+    }
 
     public string DeviceName 
     { 
 
-        get => this._currentDevice==null?null:this._currentDevice.DeviceName;
+        get => this.CurrentDevice==null?null:this.CurrentDevice.DeviceName;
         set
         {
             this.SetDevice(value);
@@ -30,35 +73,50 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService
         {
             return;
         }
-        if (_currentDevice.GetDeviceList().Contains(channelName))
+
+        foreach (IDevicesService dev in this.deviceTypesList)
         {
-            this._currentDevice.DeviceName = channelName;
-            return;
+            if (dev.GetDeviceList().Contains(channelName))
+            {
+                this.CurrentDevice = dev;
+                this.CurrentDevice.DeviceName = channelName;
+                break;
+            }
         }
-        throw new ArgumentException($"Device Name Invalid: {channelName}");
 
     }
 
-    public bool IsEnabled => this._currentDevice != null;
+    public bool IsEnabled => this.CurrentDevice != null;
 
-    public bool IsConnected => this._currentDevice == null ? false : this._currentDevice.IsConnected;
+    public bool IsConnected => this.CurrentDevice == null ? false : this.CurrentDevice.IsConnected;
 
-    public string Description => this._currentDevice == null ? "n/a" : this._currentDevice.DeviceName;
+    public string Description => this.CurrentDevice == null ? "n/a" : this.CurrentDevice.DeviceName;
 
     public bool Open(string commChannel)
     {
-        if (this._currentDevice == null)
+        if(string.IsNullOrEmpty(commChannel))
         {
-            if (String.IsNullOrEmpty(this.DeviceName)) FireErrorEvent(Constants.DEVICE_NOT_SETUP);
-            else FireErrorEvent(Constants.DEVICE_NOT_CONNECTED);
+            FireErrorEvent("*** No channel passed to Open(commChannel) ***");
             return false;
         }
-        return this._currentDevice.Open(commChannel);
+
+        if(this.CurrentDevice == null || string.Compare(commChannel,this.CurrentDevice.DeviceName) != 0)
+        {
+            SetDevice(commChannel);
+        }
+        
+        if (this.CurrentDevice == null)
+        {
+            if (String.IsNullOrEmpty(this.DeviceName)) FireErrorEvent($"*** Device {commChannel} is not available ***");
+            else FireErrorEvent("Device is not connected");
+            return false;
+        }
+        return this.CurrentDevice.Open(commChannel);
     }
 
     public bool Close()
     {
-        return this._currentDevice == null ? false : this._currentDevice.Close();
+        return this.CurrentDevice == null ? false : this.CurrentDevice.Close();
     }
 
     private object eventLock = new object();
@@ -70,8 +128,8 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService
             lock (eventLock)
             {
                 this._communicationEvent += value;
-                if (this._currentDevice == null) return;
-                this._currentDevice.CommunicationEvent += value;
+                if (this.CurrentDevice == null) return;
+                this.CurrentDevice.CommunicationEvent += value;
             }
         }
         remove
@@ -79,8 +137,8 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService
             lock (eventLock)
             {
                 this._communicationEvent -= value;
-                if (this._currentDevice == null) return;
-                this._currentDevice.CommunicationEvent -= value;
+                if (this.CurrentDevice == null) return;
+                this.CurrentDevice.CommunicationEvent -= value;
             }
         }
     }
@@ -95,11 +153,11 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService
         }
     }
 
-    public override string ToString() => this._currentDevice.DeviceName;
+    public override string ToString() => this.CurrentDevice.DeviceName;
 
-    public async Task<bool> Send(string text) => await this._currentDevice?.Send(text);
+    public async Task<bool> Send(string text) => await this.CurrentDevice?.Send(text);
 
-    public async Task<bool> Send(byte[] buffer, int offset, int count) => await this._currentDevice?.Send(buffer, offset, count);
+    public async Task<bool> Send(byte[] buffer, int offset, int count) => await this.CurrentDevice?.Send(buffer, offset, count);
     
     
 }

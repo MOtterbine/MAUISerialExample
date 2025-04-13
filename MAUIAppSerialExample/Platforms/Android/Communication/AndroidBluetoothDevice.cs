@@ -1,15 +1,10 @@
 ﻿using System.Text;
 using Java.Util;
 using Android.Bluetooth;
-using System.Security.Cryptography.X509Certificates;
-using Bumptech.Glide.Load.Resource.Bitmap;
-using Javax.Security.Auth;
-using Android.Systems;
 
 namespace MAUIAppSerialExample;
 
-
-public partial class AndroidBluetoothDevice : ICommunicationDevice, IDevicesService
+public partial class AndroidBluetoothDevice : IDevicesService, ICommunicationDevice
 {
 
     // ELM327 uart rx buffer is 512 bytes
@@ -38,7 +33,6 @@ public partial class AndroidBluetoothDevice : ICommunicationDevice, IDevicesServ
 
     public IList<string> GetDeviceList()
     {
-        
         var btdevice = this.bluetoothAdapter?.BondedDevices.Select(d => d.Name).ToList();
         return btdevice;
     }
@@ -77,7 +71,7 @@ public partial class AndroidBluetoothDevice : ICommunicationDevice, IDevicesServ
                 listenTask = new Task(async () => { await beginListen(commChannel); });
                 listenTask.Start();
                 // detect if we actually connected
-                if (!this.waitConnect.WaitOne(Constants.COMMUNICATION_WAIT_CONNECT_TIMEOUT))
+                if (!this.waitConnect.WaitOne(5000))
                 {
                     // connect timed out, cancel everthing
                     this.tokenSource?.Cancel();
@@ -102,7 +96,7 @@ public partial class AndroidBluetoothDevice : ICommunicationDevice, IDevicesServ
 
         if (String.IsNullOrEmpty(commChannel))
         {
-            FireErrorEvent(Constants.DEVICE_NOT_SETUP);
+            FireErrorEvent(Constants.COMMUNICATION_DEVICE_NOT_SETUP);
             return;
         }
 
@@ -222,7 +216,7 @@ public partial class AndroidBluetoothDevice : ICommunicationDevice, IDevicesServ
         {
             this.tokenSource = new CancellationTokenSource();
 
-            if (this.bluetoothSocket != null)
+            if(this.bluetoothSocket != null)
             {
 
                 bytesRead = await this.bluetoothSocket.InputStream.ReadAsync(TmpBuffer, 0, BUFFER_SIZE - 1, this.tokenSource.Token);
@@ -230,15 +224,15 @@ public partial class AndroidBluetoothDevice : ICommunicationDevice, IDevicesServ
                 {
                     FireReceiveEvent(TmpBuffer.Take(bytesRead).ToArray());
                 }
-            }
+            } 
             else
             {
-                FireDeviceEvent(new DeviceEventArgs() { Event = CommunicationEvents.Disconnected });
+                FireDeviceEvent(new DeviceEventArgs() { Event = CommunicationEvents.Disconnected});
             }
         }
         catch (Exception ex)
         {
-            FireDeviceEvent(new DeviceEventArgs() { Event = CommunicationEvents.Disconnected });
+                FireDeviceEvent(new DeviceEventArgs() { Event = CommunicationEvents.Disconnected});
         }
         finally
         {

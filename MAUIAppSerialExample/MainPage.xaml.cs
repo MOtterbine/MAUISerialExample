@@ -16,16 +16,19 @@ public partial class MainPage : ContentPage
 
     public List<UInt32> BaudRates => MAUIAppSerialExample.BaudRates.Items;
 
-    private UInt32 serialBaudRate = Convert.ToUInt32(Preferences.Get(Constants.PREFS_SERIAL_BAUD_RATE, (uint)9600));
-    public UInt32 SerialBaudRate
+    private UInt32 selectedBaudRate;// =  Convert.ToUInt32(Preferences.Get(Constants.PREFS_SERIAL_BAUD_RATE, (uint)9600));
+    public UInt32 SelectedBaudRate
     {
-        get { return serialBaudRate; }
+        get { return selectedBaudRate; }
         set
         {
-            this.serialBaudRate = value;
-            OnPropertyChanged("SerialBaudRate");
+            this.selectedBaudRate = BaudRates.Where(b => b == value).FirstOrDefault() ;
             Preferences.Set(Constants.PREFS_SERIAL_BAUD_RATE, value);
-
+            OnPropertyChanged("SelectedBaudRate");
+            if(this.serialService!= null)
+            {
+                (this.serialService as ISerialDevice).BaudRate = value;
+            }
         }
     }
 
@@ -46,16 +49,19 @@ public partial class MainPage : ContentPage
         _ = new Binding("SendCR") { Source = this };
         _ = new Binding("Version") { Source = this };
         _ = new Binding("EOTCharacterString") { Source = this };
-        _ = new Binding("SerialBaudRate") { Source = this };
+        _ = new Binding("SelectedBaudRate") { Source = this };
         _ = new Binding("CheckForEOT") { Source = this };
         _ = new Binding("ExpectResponse") { Source = this };
 
-           EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, ">");;
+        EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, ">");
+
+        var storedBaud = Convert.ToUInt32(Preferences.Get(Constants.PREFS_SERIAL_BAUD_RATE, (uint)9600));
+        SelectedBaudRate = BaudRates.Where(b => b == storedBaud).FirstOrDefault();
 
 
 
-        // Assign a delegate for the device's event callback method
-        eventsCallback = this.OnDeviceEvent;
+    // Assign a delegate for the device's event callback method
+    eventsCallback = this.OnDeviceEvent;
 
         // Create a Communication Timeout (so we don't get stuck)
         this._CommTimeoutHandler = this.OnCommTimeout;
@@ -72,8 +78,39 @@ public partial class MainPage : ContentPage
     }
 
 
+    public void SetCommMethod()
+    {
 
-    
+        if (!Preferences.ContainsKey("AppInitialized"))
+        {
+            Preferences.Clear();
+        }
+        Preferences.Set("AppInitialized", true);
+
+
+        if (this.serialService == null)
+        {
+            this.serialService = new MAUI_SerialDevice() as ICommunicationDevice;
+        }
+
+
+        this.SelectedDevice = Preferences.Get(Constants.SETTINGS_DEVICE_NAME, "");
+        //if(string.IsNullOrEmpty(this.SelectedBluetoothDevice))
+        //{
+        //    // First run...
+        //    Preferences.Clear();
+        //}
+        this.serialService.DeviceName = this.SelectedDevice;
+        var sp = (this.serialService as ISerialDevice);
+        if (sp != null)
+        {
+            sp.BaudRate = SelectedBaudRate;
+        }
+
+
+    }
+
+
     private void PApp_PermissionsReadyEvent(object sender, EventArgs e)
     {
         if (!pApp.HasPermissions) return;
@@ -93,6 +130,8 @@ public partial class MainPage : ContentPage
         var storedDeviceName = Preferences.Default.Get(Constants.SETTINGS_DEVICE_NAME, string.Empty);
         // Search the list of available devices for the name
         this.SelectedDevice = this.DeviceList.Where(d => string.Compare(d, storedDeviceName) == 0).FirstOrDefault();
+
+        SetCommMethod();
     }
 
     ICommunicationDevice serialService = (new MAUI_SerialDevice() as ICommunicationDevice);
@@ -188,7 +227,13 @@ public partial class MainPage : ContentPage
             if (string.Compare(selectedDeviceName, value) == 0 || string.IsNullOrEmpty(value)) return;
             selectedDeviceName = value;
             Preferences.Default.Set(Constants.SETTINGS_DEVICE_NAME, value);
+            
             OnPropertyChanged("SelectedDevice");
+            RcvData = $"Set: {value}";
+
+
+
+
         }
     }
     private string selectedDeviceName = string.Empty;
@@ -273,9 +318,10 @@ public partial class MainPage : ContentPage
         {
             case CommunicationEvents.Error:
                 CancelCommTimout();
+                serialService.CommunicationEvent -= eventsCallback;
+                serialService.Close();
                 RcvData = e.Description;
                 Debug.WriteLine($"Error {e.Description}");
-                serialService.Close();
                 CanSend = true;
                 break;
             case CommunicationEvents.ConnectedAsClient:
@@ -320,13 +366,14 @@ public partial class MainPage : ContentPage
                             this.RcvData = $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
                         }
                         i++;
-                        for (; i < e.data.Length; i++) // max 4 bytes
+                        for (; i < e.data.Length; i++) 
                         {
                             if (e.data[i] != null)
                             {
-                                // byte to binary (i.e. 01101100)
+                                // byte to binary (i.e. 01101100) - base 2
                                 // Append...
-                                this.RcvData += $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
+                                var s = Convert.ToString(e.data[i], 2);
+                                this.RcvData += $"byte {i}: {s.PadLeft(8, '0')}{Environment.NewLine}";
                             }
                         }
                     }
@@ -354,16 +401,22 @@ public partial class MainPage : ContentPage
     {
 
 #if ANDROID || WINDOWS
+        if (string.IsNullOrEmpty(deviceName))
+        {
+            RcvData = Constants.DEVICE_NOT_SETUP;
+            CanSend = true;
+            return;
+        }
         if (serialService == null) throw new NullReferenceException("Failed to instantiate a valid ICommunicationDevice");
-
-        // Attach Events Callback before opening
-        serialService.CommunicationEvent += eventsCallback;
-
         if (this.DeviceList == null || this.DeviceList.Count < 1)
         {
             Debug.WriteLine("Error: No Devices Found");
             return;
         }
+
+        // Attach Events Callback before opening
+        serialService.CommunicationEvent += eventsCallback;
+
 
         //// Get a list of paired devices to validate the device name 
         //IList<string> deviceList = null;
@@ -386,12 +439,19 @@ public partial class MainPage : ContentPage
         var validDeviceName = DeviceList.Where(i => i.CompareTo(deviceName) == 0).FirstOrDefault();
         if (string.IsNullOrEmpty(validDeviceName))
         {
-            Debug.WriteLine($"Device {deviceName} not found in list.");
+            RcvData = Constants.DEVICE_NOT_SETUP;
+            CanSend = true;
+        //    Debug.WriteLine(RcvData);
+
+        //    Debug.WriteLine($"Device {deviceName} not found in list.");
             return;
         }
         if (serialService.Open(validDeviceName))
         {
-           
+            if(serialService is ISerialDevice)
+            {
+                (serialService as ISerialDevice).BaudRate = this.SelectedBaudRate;
+            }
             // Clear out the data buffer
             this.rawStringData.Clear();
             if (ExpectResponse)
@@ -415,10 +475,13 @@ public partial class MainPage : ContentPage
 #endif
 
         }
-        else
-        {
-            Debug.WriteLine($"Unable to open device: {deviceName}.");
-        }
+            this.CanSend = true;
+        //else
+        //{
+        //    RcvData = $"Unable to open device: {deviceName}.";
+        //    Debug.WriteLine(RcvData);
+        //    CanSend = true;
+        //}
 #endif
 
     }
@@ -449,18 +512,18 @@ public partial class MainPage : ContentPage
     /// </summary>
     private void StartSendData()
     {
-        if(String.IsNullOrEmpty(SelectedDevice))
+        Task.Factory.StartNew(()=>
         {
-            RcvData = "No Device Selected";
-            return;
-        }
 
-        // Disables controls and updates UI-thread about it
-        Dispatcher.Dispatch(() => { 
-            CanSend = false;
-            RcvData = string.Empty;
+            // Disables controls and updates UI-thread about it
+        //    Dispatcher.Dispatch(() => { 
+                CanSend = false;
+                RcvData = string.Empty;
+          //  });
+
+            TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r\n" : string.Empty)}");
+
         });
-        Task.Factory.StartNew(()=> TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r\n" : string.Empty)}"));
 
         /* TWO WAYS (method overloads) TO SEND DATA
          Task.Factory.StartNew(() => TestSerial(<DEVICE NAME>, <STRING DATA>));

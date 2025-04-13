@@ -59,7 +59,7 @@
                 <HorizontalStackLayout WidthRequest="250" Spacing="0" Padding="0" Margin="0">
                     <Label IsVisible="{Binding IsBluetooth}" VerticalOptions="Center" Grid.Row="3" Grid.Column="0" Margin="5,0,0,0">Serial Baud Rate</Label>
                     <Picker IsVisible="{Binding IsBluetooth}" Margin="0,0,0,0" WidthRequest="120" IsEnabled="{Binding CanSend}"
-                            ItemsSource="{Binding BaudRates}"  SelectedItem="{Binding SerialBaudRate}" Style="{DynamicResource nested-settings-picker}">
+                            ItemsSource="{Binding BaudRates}"  SelectedItem="{Binding SelectedBaudRate}" Style="{DynamicResource nested-settings-picker}">
                     </Picker>
                 </HorizontalStackLayout>
                 

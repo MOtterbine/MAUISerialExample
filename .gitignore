@@ -362,3 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Documents/Create OBDII Windows Release.ps1
+/Documents/Start TCP Debugging 192.168.1.163.bat

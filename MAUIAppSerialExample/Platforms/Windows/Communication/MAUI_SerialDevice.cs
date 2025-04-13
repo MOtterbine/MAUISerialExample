@@ -5,7 +5,7 @@ using Windows.Devices.SerialCommunication;
 
 namespace MAUIAppSerialExample;
 
-public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, IDisposable
+public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, IDisposable, ISerialDevice
 {
     public const int BUFFER_SIZE = 1024;
     private byte[] TmpBuffer = new byte[BUFFER_SIZE];
