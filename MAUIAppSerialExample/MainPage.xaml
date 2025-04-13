@@ -4,8 +4,8 @@
              Shell.NavBarIsVisible="False"
              x:Class="MAUIAppSerialExample.MainPage">
 
-    <ScrollView>
-        <Grid Padding="0" Margin="0">
+    <ScrollView Padding="0">
+        <Grid Padding="0" Margin="0" RowSpacing="0">
             
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"></RowDefinition>
@@ -13,7 +13,7 @@
             </Grid.RowDefinitions>
             
             <!-- Main Title -->
-            <VerticalStackLayout Grid.Row="0" Margin="20,50,20,5">
+            <VerticalStackLayout Grid.Row="0" Margin="15,40,15,5">
                 <Label
                     Text="{OnPlatform WinUI='MAUI Serial/Bluetooth Tester', Android='MAUI Bluetooth Tester'}"
                     Style="{StaticResource SubHeadline}" FontSize="26" Margin="0" Padding="0"
@@ -121,13 +121,14 @@
 
                 <HorizontalStackLayout HorizontalOptions="Center" Margin="5,0" Padding="0" Spacing="0">
                     <!-- String to Send -->
-                    <Entry
+                    <Entry Margin="0"
+                        HorizontalOptions="CenterAndExpand"
                             HeightRequest="50"
                             Completed="SendDataEntry_Completed"
                             IsEnabled="{Binding CanSend}"
                             x:Name="SendDataEntry"
                             Background="#11000000"
-                            WidthRequest="{OnPlatform WinUI=250,Android=200}"
+                            WidthRequest="{OnPlatform WinUI=250,Android=210}"
                             Placeholder="&#60;Data To Send&#62;"
                             Text="{Binding Path=SendData, Mode=OneWayToSource}"
                             HorizontalTextAlignment="Start"
@@ -140,7 +141,7 @@
                         Margin="10,0,0,0"
                         FontSize="Medium"
                         IsEnabled="{Binding CanSend}"
-                        WidthRequest="{OnPlatform WinUI=150,Android=70}"
+                        Padding="15,2"
                         x:Name="SendButton"
                         Text="Send" 
                         SemanticProperties.Hint="Sends the specified string"
