@@ -1,4 +1,4 @@
-<h1 >MAUI Bluetooth for Windows and Android</h1>
+<h1 >MAUI USB Serial and Bluetooth for Windows and Android</h1>
 <h3 >A Basic Visual Studio Solution</h3>
 <div style="margin:0em">
     <p>This <b>Visual Studio MAUI solution</b> demonstrates the asychronous use of serial and bluetooth communications implemented across Android and Windows platforms</b></p>
