@@ -52,8 +52,10 @@ public partial class MainPage : ContentPage
         _ = new Binding("SelectedBaudRate") { Source = this };
         _ = new Binding("CheckForEOT") { Source = this };
         _ = new Binding("ExpectResponse") { Source = this };
+        _ = new Binding("PlainTextOutput") { Source = this };
 
         EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, ">");
+        PlainTextOutput = Preferences.Default.Get(Constants.SETTINGS_OUTPUT_IS_PLAIN_TEXT, true);
 
         var storedBaud = Convert.ToUInt32(Preferences.Get(Constants.PREFS_SERIAL_BAUD_RATE, (uint)9600));
         SelectedBaudRate = BaudRates.Where(b => b == storedBaud).FirstOrDefault();
@@ -169,7 +171,20 @@ public partial class MainPage : ContentPage
         }
     }
     private bool _canSend = true;
-    public string SendData { get; set; } = String.Empty;
+    public string SendData { get; set; } = string.Empty;// Encoding.ASCII.GetString(new byte[] { 0xA0, 0x01, 0x01, 0xA2});
+    public bool PlainTextOutput
+    {
+        get => plainTextOutput;
+        set
+        {
+            // update the value and notify the xaml
+            if (plainTextOutput == value) return;
+            plainTextOutput = value;
+            Preferences.Default.Set(Constants.SETTINGS_OUTPUT_IS_PLAIN_TEXT, value);
+            OnPropertyChanged("PlainTextOutput");
+        }
+    }
+    private bool plainTextOutput = Preferences.Default.Get(Constants.PREFS_TEST_FOR_RESPONSE, true);
 
     public bool SendCR
     {
@@ -358,30 +373,69 @@ public partial class MainPage : ContentPage
                     // NO EOT
                     if (!ExpectEOT)
                     {
-                        int i = 0;
-                        if (e.data.Length > 0)
+                        if (PlainTextOutput)
                         {
-                            // byte to binary (i.e. 01101100)
-                            // Set initial 
-                            this.RcvData = $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
+                            this.RcvData = Encoding.ASCII.GetString(e.data);
+
                         }
-                        i++;
-                        for (; i < e.data.Length; i++) 
+                        else
                         {
-                            if (e.data[i] != null)
+                            int i = 0;
+                            if (e.data.Length > 0)
                             {
-                                // byte to binary (i.e. 01101100) - base 2
-                                // Append...
-                                var s = Convert.ToString(e.data[i], 2);
-                                this.RcvData += $"byte {i}: {s.PadLeft(8, '0')}{Environment.NewLine}";
+                                // byte to binary (i.e. 01101100)
+                                // Set initial 
+                                this.RcvData = $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
+                            }
+                            i++;
+                            for (; i < e.data.Length; i++)
+                            {
+                                if (e.data[i] != null)
+                                {
+                                    // byte to binary (i.e. 01101100) - base 2
+                                    // Append...
+                                    var s = Convert.ToString(e.data[i], 2);
+                                    this.RcvData += $"byte {i}: {s.PadLeft(8, '0')}{Environment.NewLine}";
+                                }
                             }
                         }
                     }
                     else
                     {
                         // WITH EOT
-                        // Transfer the entire stream of data, with '\r' trimmed from the edges
-                        this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @$"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|{_EOTCharacter})", $"{Environment.NewLine}").Trim(Environment.NewLine.ToArray()[0]);
+                        if (PlainTextOutput)
+                        {
+                            this.RcvData = Encoding.ASCII.GetString(e.data, 0, e.data.Length - 1);
+                        }
+                        else
+                        {
+
+                            // Transfer the entire stream of data, with '\r' trimmed from the edges
+                     //       this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @$"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|{_EOTCharacter})", $"{Environment.NewLine}").Trim(Environment.NewLine.ToArray()[0]);
+
+
+                            int i = 0;
+                            if (e.data.Length > 0)
+                            {
+                                // byte to binary (i.e. 01101100)
+                                // Set initial 
+                                this.RcvData = $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
+                            }
+                            i++;
+                            for (; i < e.data.Length; i++)
+                            {
+                                if (e.data[i] != null)
+                                {
+                                    // byte to binary (i.e. 01101100) - base 2
+                                    // Append...
+                                    var s = Convert.ToString(e.data[i], 2);
+                                    this.RcvData += $"byte {i}: {s.PadLeft(8, '0')}{Environment.NewLine}";
+                                }
+                            }
+
+
+
+                        }
                     }
 
                   //  Debug.WriteLine($"Data Received: {e.data.Length} bytes - {this.RcvData}.");

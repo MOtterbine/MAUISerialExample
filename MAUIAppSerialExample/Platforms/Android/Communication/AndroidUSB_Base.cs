@@ -6,10 +6,11 @@ using String = System.String;
 using Exception = System.Exception;
 
 namespace MAUIAppSerialExample;
+
     public enum FlowControl
-    {
-        NONE, RTS_CTS, DTR_DSR, XON_XOFF_INLINE
-    }
+{
+    NONE, RTS_CTS, DTR_DSR,  XON_XOFF, XON_XOFF_INLINE
+}
 
 /// <summary>
 /// AndroidUSB_Base USB to Serial Converter IC devices
@@ -20,6 +21,7 @@ public class AndroidUSB_Base
     protected char CHAR_XON = (char)17;
     /** XOFF character used with flow control XON/XOFF */
     protected char CHAR_XOFF = (char)19;
+    protected FlowControl mFlowControl = FlowControl.NONE;
 
     protected virtual uint VENDOR_ID => 0x0000; 
     public virtual int BUFFER_SIZE => 1024;
@@ -235,7 +237,10 @@ public class AndroidUSB_Base
     /// <summary>
     /// Intended for specific implementations called from the base
     /// </summary>
-    protected virtual void InitUSBSerial() {   }
+    protected virtual void InitUSBSerial() 
+    {
+
+    }
 
     public virtual async Task Listen()
     {
@@ -376,6 +381,7 @@ public class AndroidUSB_Base
 
     public async Task<bool> Send(string text)
     {
+        //await this.Send(Encoding.ASCII.GetString(new byte[] { 0xA0, 0x01, 0x01, 0xA2 }));
         await this.Send(Encoding.UTF8.GetBytes(text), 0, text.Length);
         return false;
     }

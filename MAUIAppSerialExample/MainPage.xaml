@@ -148,8 +148,15 @@
                         Clicked="OnSendButtonClicked"
                         HorizontalOptions="Fill" />
                 </HorizontalStackLayout>
+                <Label HorizontalTextAlignment="Start" Padding="0,0" Margin="0,0" VerticalOptions="Center" VerticalTextAlignment="Center" FontAttributes="Bold">Response:</Label>
+                <HorizontalStackLayout VerticalOptions="End" Spacing="0" Margin="0" Padding="0" HeightRequest="20">
                 <!-- Receive Data displayed as string -->
-                <Label HorizontalTextAlignment="Start" Padding="0" Margin="0">Response</Label>
+                    <Label HorizontalTextAlignment="Start" Padding="0,0" Margin="0,0" VerticalOptions="Center" VerticalTextAlignment="Center">plain text</Label>
+                <!-- CR Checkbox -->
+                <CheckBox  VerticalOptions="Center" HorizontalOptions="Center" Margin="0,0,0,0"
+                            IsChecked="{Binding PlainTextOutput}" 
+                            IsEnabled="{Binding CanSend}" />
+                </HorizontalStackLayout>
                 <Frame BorderColor="#55000000" Margin="0" Padding="5">
                     <ScrollView HeightRequest="200">
                         <Label Padding="0" Margin="5" 

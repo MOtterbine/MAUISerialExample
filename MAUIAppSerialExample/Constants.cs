@@ -17,6 +17,7 @@ public class Constants
     public const String SETTINGS_DEVICE_NAME = "selected_device_name";
     public const String SETTINGS_SEND_CR = "send_cr";
     public const String SETTINGS_EOT_CHARACTER = "eot_char";
+    public const String SETTINGS_OUTPUT_IS_PLAIN_TEXT = "ouput_is_plaintext";
 
     public const string COMMUNICATION_DEVICE_NOT_SETUP = "*** Device Not Setup ***";
     public const string PREFS_SERIAL_BAUD_RATE = "serial_baud";

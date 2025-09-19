@@ -6,7 +6,7 @@ using Exception = System.Exception;
 namespace MAUIAppSerialExample;
 
 /// <summary>
-/// CH34X USB to Serial Converter IC devices
+/// CHCP21XX USB to Serial Converter IC devices
 /// </summary>
 public class CP21X : AndroidUSB_Base, IDevicesService, ICommunicationDevice, ISerialDevice
 {

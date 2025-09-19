@@ -385,7 +385,6 @@ public class USBSerial_FTDI : AndroidUSB_Base, IDevicesService, ICommunicationDe
     //{
     //            return EnumSet.allOf(ControlLine.class);
     //        }
-    private FlowControl mFlowControl = FlowControl.NONE;
     public void SetFlowControl(FlowControl flowControl) 
     {
         int value = 0;
