@@ -7,4 +7,6 @@ namespace MAUIAppSerialExample;
 public interface ISerialDevice
 {
     uint BaudRate { get; set; }
+    bool DTR { get; set; }
+    bool RTS { get; set; }
 }

@@ -212,11 +212,24 @@
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
-    
-    <Style TargetType="Label" x:Key="RcvDataStyle">
+
+    <Style TargetType="Label" x:Key="StatusMessageStyle">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource White}}" />
         <Setter Property="FontSize" Value="24" />
-        <Setter Property="HorizontalOptions" Value="FillAndExpand" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="HorizontalOptions" Value="Center" />
+        <Setter Property="HorizontalTextAlignment" Value="Center" />
+        <Setter Property="Margin" Value="5" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="RCVMessageStyle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource White}}" />
+        <Setter Property="FontSize" Value="{OnPlatform 24, WinUI=22, Android=24}" />
+        <Setter Property="FontAttributes" Value="{OnPlatform Bold, WinUI=None, Android=Bold}" />
+        <Setter Property="VerticalOptions" Value="Start" />
+        <Setter Property="VerticalTextAlignment" Value="Start" />
+        <Setter Property="HorizontalOptions" Value="Start" />
         <Setter Property="HorizontalTextAlignment" Value="Start" />
         <Setter Property="Margin" Value="5" />
         <Setter Property="Padding" Value="0" />

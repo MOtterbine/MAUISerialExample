@@ -80,4 +80,10 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Reference Include="OS.Localization">
+	    <HintPath>..\..\SimpleOBDII\OS.Localization\bin\Release\net8.0-android\OS.Localization.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
 </Project>

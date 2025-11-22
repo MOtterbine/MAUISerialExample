@@ -10,7 +10,7 @@ public partial class MAUI_SerialDevice : IDevicesService, ICommunicationDevice, 
 
     public uint BaudRate
     {
-        get 
+        get
         {
             if (!(CurrentDevice is ISerialDevice)) return 9600;
             return (CurrentDevice as ISerialDevice).BaudRate;
@@ -20,6 +20,38 @@ public partial class MAUI_SerialDevice : IDevicesService, ICommunicationDevice, 
             if (CurrentDevice is ISerialDevice)
             {
                 (CurrentDevice as ISerialDevice).BaudRate = value;
+            }
+        }
+    }
+
+    public bool DTR
+    {
+        get
+        {
+            if (!(CurrentDevice is ISerialDevice)) return false;
+            return (CurrentDevice as ISerialDevice).DTR;
+        }
+        set
+        {
+            if (CurrentDevice is ISerialDevice)
+            {
+                (CurrentDevice as ISerialDevice).DTR = value;
+            }
+        }
+    }
+
+    public bool RTS
+    {
+        get
+        {
+            if (!(CurrentDevice is ISerialDevice)) return false;
+            return (CurrentDevice as ISerialDevice).RTS;
+        }
+        set
+        {
+            if (CurrentDevice is ISerialDevice)
+            {
+                (CurrentDevice as ISerialDevice).RTS = value;
             }
         }
     }

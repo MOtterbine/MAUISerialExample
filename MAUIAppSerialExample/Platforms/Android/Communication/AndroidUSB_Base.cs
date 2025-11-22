@@ -27,6 +27,9 @@ public class AndroidUSB_Base
     public virtual int BUFFER_SIZE => 1024;
 
     public uint BaudRate { get; set; } = 38400;
+    public bool DTR { get; set; } = true;
+    public bool RTS { get; set; } = true;
+
 
     public event DeviceEvent DeviceEvent;
 

@@ -56,6 +56,33 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
     }
 
     public uint BaudRate { get; set; } = 9600;
+    public bool DTR { get; set; } = true;
+    //{
+    //    get
+    //    {
+    //        return this.SelectedSerialDevice.IsDataTerminalReadyEnabled;
+    //    }
+    //    set
+    //    {
+    //        if (this.SelectedSerialDevice.IsDataTerminalReadyEnabled == value) return;
+    //        this.SelectedSerialDevice.IsDataTerminalReadyEnabled = value;
+    //    }
+    //} = true;
+
+    public bool RTS { get; set; } = true;
+    //{
+    //    get
+    //    {
+    //        return this.SelectedSerialDevice.IsRequestToSendEnabled;
+    //    }
+    //    set
+    //    {
+    //        if (this.SelectedSerialDevice.IsRequestToSendEnabled == value) return;
+    //        this.SelectedSerialDevice.IsRequestToSendEnabled = value;
+    //    }
+    //} = true;
+
+
 
     public SerialHandshake Handshake
     {
@@ -79,8 +106,10 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
         InitDevices();
     }
 
-    public MAUI_SerialDevice(string chName, uint baud)
+    public MAUI_SerialDevice(string chName, uint baud, bool _dtrEnabled = true, bool _rtsEnabled = true)
     {
+        this.DTR = _dtrEnabled;
+        this.RTS = _rtsEnabled;
         this.BaudRate = baud;
         this.DeviceName = chName;
         // Starts asychrounous methods
@@ -180,7 +209,7 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
 
             // Find the device by name from a collection of deviceinfos
             var g = (from bd in this.devicesInfoList
-                     where bd?.Name == deviceName// DeviceManager.Instance.CommChannelName
+                     where bd?.Name == deviceName
                      select bd).FirstOrDefault();
 
             if (g == null)
@@ -214,8 +243,8 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
                 SelectedSerialDevice.BreakSignalState = false;
                 SelectedSerialDevice.DataBits = 8;
                 SelectedSerialDevice.Handshake = SerialHandshake.None;
-                SelectedSerialDevice.IsDataTerminalReadyEnabled = true;
-                SelectedSerialDevice.IsRequestToSendEnabled = true;
+                SelectedSerialDevice.IsDataTerminalReadyEnabled = this.DTR;
+                SelectedSerialDevice.IsRequestToSendEnabled = this.RTS;
                 SelectedSerialDevice.Parity = SerialParity.None;
                 SelectedSerialDevice.StopBits = SerialStopBitCount.One;
                 SelectedSerialDevice.ReadTimeout = new TimeSpan(0, 0, 0, 0, 5);

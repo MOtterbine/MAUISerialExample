@@ -4,5 +4,17 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:maui="using:Microsoft.Maui"
     xmlns:local="using:MAUIAppSerialExample.WinUI">
+    
+    <maui:MauiWinUIApplication.Resources>
+        <!--<Style TargetType="vie">
+        <Setter Property="MinimumWidthRequest" Value="{OnPlatform WinUI='450'}" />
+        <Setter Property="MinimumHeightRequest" Value="{OnPlatform WinUI='750'}" />
+    </Style>-->
+        <DataTemplate x:Key="MauiAppTitleBarTemplate">
+            <Grid  Background="#505050">
 
+            </Grid>
+        </DataTemplate>
+    </maui:MauiWinUIApplication.Resources>
+    
 </maui:MauiWinUIApplication>

@@ -43,7 +43,13 @@ public class MainActivity : MauiAppCompatActivity
         {
 
             // Start permissions check...
-            RequestPermissions(new string[] { "android.permission.BLUETOOTH_CONNECT" }, 15001); // the value 15001 is arbitrary and random
+            // Start permissions check...
+            RequestPermissions(new string[] { "android.permission.BLUETOOTH_CONNECT",
+                                                                    "android.permission.BLUETOOTH_ADVERTISE",
+                                                                    "android.permission.BLUETOOTH_SCAN",
+                                                                    "android.permission.BLUETOOTH_SCAN",
+                                                                    "android.permission.ACCESS_FINE_LOCATION"
+                                                                    }, 15001); // the value 15001 is arbitrary and random
 
         }
         else

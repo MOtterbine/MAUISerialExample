@@ -32,6 +32,38 @@ public partial class MainPage : ContentPage
         }
     }
 
+    public bool RTSEnabled
+    {
+        get => _RTSEnabled;
+        set
+        {
+            // update the value and notify the xaml
+            if (_RTSEnabled == value) return;
+            _RTSEnabled = value;
+            Preferences.Default.Set(Constants.PREFS_DTR_ENABLED, value);
+            OnPropertyChanged("RTSEnabled");
+        }
+    }
+    private bool _RTSEnabled = Preferences.Default.Get(Constants.PREFS_RTS_ENABLED, false);
+
+    public bool DTREnabled
+    {
+        get => _DTREnabled;
+        set
+        {
+            // update the value and notify the xaml
+            if (_DTREnabled == value) return;
+            _DTREnabled = value;
+            Preferences.Default.Set(Constants.PREFS_DTR_ENABLED, value);
+            OnPropertyChanged("DTREnabled");
+        }
+    }
+    private bool _DTREnabled = Preferences.Default.Get(Constants.PREFS_DTR_ENABLED, false);
+
+
+
+
+
 
     public MainPage()
     {
@@ -50,6 +82,8 @@ public partial class MainPage : ContentPage
         _ = new Binding("Version") { Source = this };
         _ = new Binding("EOTCharacterString") { Source = this };
         _ = new Binding("SelectedBaudRate") { Source = this };
+        _ = new Binding("DTREnabled") { Source = this };
+        _ = new Binding("RTSEnabled") { Source = this };
         _ = new Binding("CheckForEOT") { Source = this };
         _ = new Binding("ExpectResponse") { Source = this };
         _ = new Binding("PlainTextOutput") { Source = this };
@@ -77,6 +111,11 @@ public partial class MainPage : ContentPage
 
 
         EOTCharacterString = Preferences.Default.Get(Constants.SETTINGS_EOT_CHARACTER, ">"); ;
+
+
+        (this.serialService as ISerialDevice).DTR = false;
+        (this.serialService as ISerialDevice).RTS = false; ;
+
     }
 
 
@@ -107,6 +146,8 @@ public partial class MainPage : ContentPage
         if (sp != null)
         {
             sp.BaudRate = SelectedBaudRate;
+            sp.RTS = this.RTSEnabled;
+            sp.DTR = this.DTREnabled;
         }
 
 
@@ -212,6 +253,7 @@ public partial class MainPage : ContentPage
         }
     }
     private bool expectResponse = Preferences.Default.Get(Constants.PREFS_TEST_FOR_RESPONSE, false);
+
 
     public bool ExpectEOT
     {
@@ -525,7 +567,7 @@ public partial class MainPage : ContentPage
             this.CloseCommChannel();
 #if WINDOWS
             // put the user right back on the data to send control - Great in Windows, but keyboard pops up on Android when focus goes to Entry
-            Dispatcher.Dispatch(()=>SendDataEntry.Focus());
+            await Dispatcher.DispatchAsync(()=>SendDataEntry.Focus());
 #endif
 
         }
@@ -566,16 +608,29 @@ public partial class MainPage : ContentPage
     /// </summary>
     private void StartSendData()
     {
-        Task.Factory.StartNew(()=>
+        Task.Factory.StartNew(async ()=>
         {
 
             // Disables controls and updates UI-thread about it
         //    Dispatcher.Dispatch(() => { 
                 CanSend = false;
                 RcvData = string.Empty;
-          //  });
+            //  });
+            var sp = (this.serialService as ISerialDevice);
+            if (sp != null)
+            {
+                sp.BaudRate = SelectedBaudRate;
+                sp.RTS = this.RTSEnabled;
+                sp.DTR = this.DTREnabled;
+            }
 
-            TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r\n" : string.Empty)}");
+            await TestSerial(SelectedDevice, $"{SendData}{(SendCR ? "\r\n" : string.Empty)}");
+
+#if WINDOWS
+            // put the user right back on the data to send control - Great in Windows, but keyboard pops up on Android when focus goes to Entry
+            await Dispatcher.DispatchAsync(() => SendDataEntry.Focus());
+#endif
+
 
         });
 

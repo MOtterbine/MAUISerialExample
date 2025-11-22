@@ -119,6 +119,7 @@ public class CH34X : AndroidUSB_Base, IDevicesService, ICommunicationDevice, ISe
         }
 
         setBaudRate((int)BaudRate);
+        
 
     }
 
