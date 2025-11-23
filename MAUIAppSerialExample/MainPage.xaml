@@ -2,11 +2,14 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              Shell.NavBarIsVisible="False"
+             Background="Black"
              x:Class="MAUIAppSerialExample.MainPage">
-    <Frame CornerRadius="20" BackgroundColor="Black">
+    <Frame CornerRadius="{OnPlatform WinUI=0, Android=15}" BackgroundColor="#FFF" Padding="0" BorderColor="Black" Margin="0">
+        <ScrollView Margin="0" Padding="0">
         <Grid Padding="0" Margin="0" RowSpacing="0">
             
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
@@ -68,15 +71,15 @@
   
                     
                     <Label Grid.Row="2" Grid.Column="0" IsVisible="{Binding IsBluetooth}" VerticalOptions="Center" HorizontalTextAlignment="End" Margin="0" Padding="0" LineHeight=".8">DTR</Label>
-                <CheckBox Grid.Row="2" Grid.Column="1" HorizontalOptions="Start" IsChecked="{Binding DTREnabled}" ToolTipProperties.Text="for wired devices" />
+                        <CheckBox Grid.Row="2" Grid.Column="1" HorizontalOptions="Start" IsChecked="{Binding DTREnabled}" IsEnabled="{Binding CanSend}" ToolTipProperties.Text="for wired devices" />
                     
                     <Label Grid.Row="2" Grid.Column="2" IsVisible="{Binding IsBluetooth}" VerticalOptions="Center" HorizontalTextAlignment="End" Margin="0" Padding="0" LineHeight=".8">RTS</Label>
-                    <CheckBox Grid.Row="2" Grid.Column="3"  HorizontalOptions="Start" IsChecked="{Binding RTSEnabled}"  HeightRequest="10" ToolTipProperties.Text="for wired devices"/>
+                        <CheckBox Grid.Row="2" Grid.Column="3"  HorizontalOptions="Start" IsChecked="{Binding RTSEnabled}" IsEnabled="{Binding CanSend}"  ToolTipProperties.Text="for wired devices"/>
                 </Grid>
             </Frame>
 
 
-                <VerticalStackLayout Grid.Row="2" Margin="30,5">
+                <VerticalStackLayout Grid.Row="2" Margin="30,5,30,10">
                     
                     <VerticalStackLayout HorizontalOptions="Center" WidthRequest="340" Spacing="0" Padding="0" Margin="0" Background="#00000000" >
                         <HorizontalStackLayout HorizontalOptions="Center" Spacing="0" Padding="0" Margin="0,0">
@@ -173,17 +176,23 @@
                                 IsEnabled="{Binding CanSend}" />
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-                <Frame Grid.Row="3" BorderColor="#55000000" Margin="0" Padding="5" CornerRadius="0" >
-                    <Grid VerticalOptions="Start">
-                <ScrollView>
-                        <Label Padding="0" Margin="5"
-                            Text="{Binding RcvData, StringFormat='{0}'}" 
-                            Style="{StaticResource RCVMessageStyle}"  />
-                    </ScrollView>
+
+                <BoxView HeightRequest="2" Grid.Row="3" HorizontalOptions="Fill" >
+                </BoxView>
+                    <Grid  Grid.Row="4" VerticalOptions="Start" Margin="0" Padding="0" RowSpacing="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <ScrollView Grid.Row="1" Margin="0">
+                            <Label Padding="0" Margin="5"
+                                Text="{Binding RcvData, StringFormat='{0}'}" 
+                                Style="{StaticResource RCVMessageStyle}"  />
+                        </ScrollView>
                     </Grid>
-                </Frame>
             
 
         </Grid>
+        </ScrollView>
     </Frame>
 </ContentPage>
