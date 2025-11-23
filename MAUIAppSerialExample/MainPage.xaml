@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              Shell.NavBarIsVisible="False"
              x:Class="MAUIAppSerialExample.MainPage">
-
+    <Frame CornerRadius="20" BackgroundColor="Black">
         <Grid Padding="0" Margin="0" RowSpacing="0">
             
             <Grid.RowDefinitions>
@@ -22,7 +22,7 @@
                 <HorizontalStackLayout HorizontalOptions="Center" Spacing="0">
                 <Label
                     Text="{OnPlatform 
-                        WinUI={Binding Version, StringFormat='for Windows(v{0})'},
+                        WinUI={Binding Version, StringFormat='for Windows (v{0})'},
                         Android={Binding Version, StringFormat='for Android (v{0})'}
                     }"
                     SemanticProperties.HeadingLevel="Level1" Margin="0" Padding="0" />                    
@@ -185,5 +185,5 @@
             
 
         </Grid>
-
+    </Frame>
 </ContentPage>
