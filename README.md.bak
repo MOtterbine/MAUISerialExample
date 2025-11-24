@@ -1,5 +1,5 @@
 <h1 >MAUI USB Serial and Bluetooth for Windows and Android</h1>
-<h3 >A C#-Based Visual Studio Solution</h3>
+<h3 >A Basic Visual Studio Solution</h3>
 <div style="margin:0em">
     <p>This <b>Visual Studio MAUI solution</b> demonstrates the asychronous use of serial and bluetooth classic communications implemented across Android and Windows platforms</b></p>
     <p>The single-page app is a basic design drawn from the stock MAUI 'Hello World' solution narrowly focused on Bluetooth and serial communication</p>
