@@ -5,7 +5,6 @@
              Background="Black"
              x:Class="MAUIAppSerialExample.MainPage">
     <Frame CornerRadius="{OnPlatform WinUI=0, Android=15}" BackgroundColor="#FFF" Padding="0" BorderColor="Black" Margin="0">
-        <ScrollView Margin="0" Padding="0">
         <Grid Padding="0" Margin="0" RowSpacing="0">
             
             <Grid.RowDefinitions>
@@ -177,22 +176,20 @@
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
 
-                <BoxView HeightRequest="2" Grid.Row="3" HorizontalOptions="Fill" >
+                <BoxView Grid.Row="3" HeightRequest="2" HorizontalOptions="Fill" >
                 </BoxView>
-                    <Grid  Grid.Row="4" VerticalOptions="Start" Margin="0" Padding="0" RowSpacing="0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition/>
-                            <RowDefinition/>
-                        </Grid.RowDefinitions>
-                        <ScrollView Grid.Row="1" Margin="0">
-                            <Label Padding="0" Margin="5"
-                                Text="{Binding RcvData, StringFormat='{0}'}" 
-                                Style="{StaticResource RCVMessageStyle}"  />
-                        </ScrollView>
-                    </Grid>
-            
 
+            <ScrollView  Grid.Row="4" Background="#f5f5f5">
+                <Grid  Grid.Row="4" VerticalOptions="Start" Margin="0" Padding="0" RowSpacing="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <ScrollView Grid.Row="0" Margin="0" HeightRequest="-1">
+                        <Label Padding="0" Margin="5"
+                            Text="{Binding RcvData, StringFormat='{0}'}" 
+                            Style="{StaticResource RCVMessageStyle}"  />
+                    </ScrollView>
+                </Grid></ScrollView>
         </Grid>
-        </ScrollView>
     </Frame>
 </ContentPage>

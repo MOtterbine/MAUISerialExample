@@ -327,7 +327,7 @@ public partial class MainPage : ContentPage
     protected void OnCommTimeout(object sender)
     {
         CancelCommTimout();
-        this.rawStringData.Clear();
+   //     this.rawStringData.Clear();
 
         this.RcvData = Constants.DEVICE_NO_RESPONSE;
         Debug.WriteLine($"Timeout - {Constants.DEVICE_NO_RESPONSE}");
@@ -410,33 +410,33 @@ public partial class MainPage : ContentPage
                 CancelCommTimout();
 
                 // show binary of the byte specified
-                if (e.data != null)
+                if (rawStringData.Length > 0)
                 {
                     // NO EOT
                     if (!ExpectEOT)
                     {
                         if (PlainTextOutput)
                         {
-                            this.RcvData = Encoding.ASCII.GetString(e.data);
+                            this.RcvData = rawStringData.ToString();// Encoding.ASCII.GetString(e.data);
 
                         }
                         else
                         {
                             int i = 0;
-                            if (e.data.Length > 0)
+                            if (rawStringData.Length > 0)
                             {
                                 // byte to binary (i.e. 01101100)
                                 // Set initial 
-                                this.RcvData = $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
+                                this.RcvData = $"byte {i}: {Convert.ToString(rawStringData[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
                             }
                             i++;
-                            for (; i < e.data.Length; i++)
+                            for (; i < rawStringData.Length; i++)
                             {
-                                if (e.data[i] != null)
+                                if (rawStringData[i] != null)
                                 {
                                     // byte to binary (i.e. 01101100) - base 2
                                     // Append...
-                                    var s = Convert.ToString(e.data[i], 2);
+                                    var s = Convert.ToString(rawStringData[i], 2);
                                     this.RcvData += $"byte {i}: {s.PadLeft(8, '0')}{Environment.NewLine}";
                                 }
                             }
@@ -447,7 +447,7 @@ public partial class MainPage : ContentPage
                         // WITH EOT
                         if (PlainTextOutput)
                         {
-                            this.RcvData = Encoding.ASCII.GetString(e.data, 0, e.data.Length - 1);
+                            this.RcvData = rawStringData.ToString(0, rawStringData.Length-1);// Encoding.ASCII.GetString(e.data, 0, e.data.Length - 1);
                         }
                         else
                         {
@@ -457,20 +457,20 @@ public partial class MainPage : ContentPage
 
 
                             int i = 0;
-                            if (e.data.Length > 0)
+                            if (rawStringData.Length > 0)
                             {
                                 // byte to binary (i.e. 01101100)
                                 // Set initial 
-                                this.RcvData = $"byte {i}: {Convert.ToString(e.data[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
+                                this.RcvData = $"byte {i}: {Convert.ToString(rawStringData[i], 2).PadLeft(8, '0')}{Environment.NewLine}";
                             }
                             i++;
-                            for (; i < e.data.Length; i++)
+                            for (; i < rawStringData.Length; i++)
                             {
-                                if (e.data[i] != null)
+                                if (rawStringData[i] != null)
                                 {
                                     // byte to binary (i.e. 01101100) - base 2
                                     // Append...
-                                    var s = Convert.ToString(e.data[i], 2);
+                                    var s = Convert.ToString(rawStringData[i], 2);
                                     this.RcvData += $"byte {i}: {s.PadLeft(8, '0')}{Environment.NewLine}";
                                 }
                             }
@@ -547,6 +547,8 @@ public partial class MainPage : ContentPage
             if(serialService is ISerialDevice)
             {
                 (serialService as ISerialDevice).BaudRate = this.SelectedBaudRate;
+                (serialService as ISerialDevice).DTR = this.DTREnabled;
+                (serialService as ISerialDevice).RTS = this.RTSEnabled;
             }
             // Clear out the data buffer
             this.rawStringData.Clear();
@@ -610,7 +612,6 @@ public partial class MainPage : ContentPage
     {
         Task.Factory.StartNew(async ()=>
         {
-
             // Disables controls and updates UI-thread about it
         //    Dispatcher.Dispatch(() => { 
                 CanSend = false;
