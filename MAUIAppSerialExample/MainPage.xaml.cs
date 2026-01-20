@@ -442,12 +442,13 @@ public partial class MainPage : ContentPage
                             }
                         }
                     }
-                    else
+                    else // WITH EOT
                     {
-                        // WITH EOT
+                        
                         if (PlainTextOutput)
                         {
-                            this.RcvData = rawStringData.ToString(0, rawStringData.Length-1);// Encoding.ASCII.GetString(e.data, 0, e.data.Length - 1);
+                            // remove any extra new lines and EOT character from the received data
+                            this.RcvData = System.Text.RegularExpressions.Regex.Replace(rawStringData.ToString(), @$"(^a-zA-Z|\r\r\r|\r\r|\r\n|\n\r|\r|\n|{_EOTCharacter})", $"{Environment.NewLine}").Trim(Environment.NewLine.ToArray()[0]);
                         }
                         else
                         {
@@ -573,13 +574,15 @@ public partial class MainPage : ContentPage
 #endif
 
         }
-            this.CanSend = true;
-        //else
-        //{
-        //    RcvData = $"Unable to open device: {deviceName}.";
-        //    Debug.WriteLine(RcvData);
-        //    CanSend = true;
-        //}
+        else
+        {
+            serialService.CommunicationEvent -= eventsCallback;
+
+            RcvData = $"Unable to open device: {deviceName}.";
+            //    Debug.WriteLine(RcvData);
+            //    CanSend = true;
+        }
+        this.CanSend = true;
 #endif
 
     }

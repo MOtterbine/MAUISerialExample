@@ -125,7 +125,7 @@ public partial class AndroidBluetoothDevice : IDevicesService, ICommunicationDev
             evt.Event = CommunicationEvents.Disconnected;
             FireDeviceEvent(evt);
         }
-    }
+    }  
 
     private bool TryDeviceConnect(string deviceName)
     {
@@ -345,7 +345,10 @@ public partial class AndroidBluetoothDevice : IDevicesService, ICommunicationDev
         }
         catch (Exception ett)
         {
-            FireErrorEvent($"Bluetooth error - {ett.Message}");
+            FireErrorEvent("Bluetooth Device not available");
+            //FireErrorEvent($"Bluetooth error - {ett.Message}");
+            
+
         }
         return false;
     }

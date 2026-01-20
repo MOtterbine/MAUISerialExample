@@ -57,31 +57,8 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
 
     public uint BaudRate { get; set; } = 9600;
     public bool DTR { get; set; } = true;
-    //{
-    //    get
-    //    {
-    //        return this.SelectedSerialDevice.IsDataTerminalReadyEnabled;
-    //    }
-    //    set
-    //    {
-    //        if (this.SelectedSerialDevice.IsDataTerminalReadyEnabled == value) return;
-    //        this.SelectedSerialDevice.IsDataTerminalReadyEnabled = value;
-    //    }
-    //} = true;
 
     public bool RTS { get; set; } = true;
-    //{
-    //    get
-    //    {
-    //        return this.SelectedSerialDevice.IsRequestToSendEnabled;
-    //    }
-    //    set
-    //    {
-    //        if (this.SelectedSerialDevice.IsRequestToSendEnabled == value) return;
-    //        this.SelectedSerialDevice.IsRequestToSendEnabled = value;
-    //    }
-    //} = true;
-
 
 
     public SerialHandshake Handshake
