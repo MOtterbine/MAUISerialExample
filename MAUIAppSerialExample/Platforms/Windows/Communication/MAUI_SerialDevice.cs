@@ -224,7 +224,7 @@ public partial class MAUI_SerialDevice : ICommunicationDevice, IDevicesService, 
                 SelectedSerialDevice.IsRequestToSendEnabled = this.RTS;
                 SelectedSerialDevice.Parity = SerialParity.None;
                 SelectedSerialDevice.StopBits = SerialStopBitCount.One;
-                SelectedSerialDevice.ReadTimeout = new TimeSpan(0, 0, 0, 0, 5);
+                SelectedSerialDevice.ReadTimeout = new TimeSpan(0, 0, 0, 0, 50);
                 SelectedSerialDevice.WriteTimeout = new TimeSpan(0, 0, 0, 0, 5);
             }
         }

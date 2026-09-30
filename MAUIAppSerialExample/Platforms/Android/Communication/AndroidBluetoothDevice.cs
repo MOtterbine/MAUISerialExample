@@ -18,6 +18,9 @@ public partial class AndroidBluetoothDevice : IDevicesService, ICommunicationDev
     private byte[] TmpBuffer = new byte[BUFFER_SIZE];
     private CancellationTokenSource tokenSource = null;// new CancellationTokenSource();
 
+    private ManualResetEvent deviceOpenEvent = new ManualResetEvent(true);
+
+
     public AndroidBluetoothDevice()
     {
 
@@ -66,6 +69,7 @@ public partial class AndroidBluetoothDevice : IDevicesService, ICommunicationDev
         {
             // threads wait...
             this.waitConnect.Reset();
+            deviceOpenEvent.Reset();
             if (this.listenTask == null || listenTask.IsCompleted)
             {
                 listenTask = new Task(async () => { await beginListen(commChannel); });
@@ -75,6 +79,7 @@ public partial class AndroidBluetoothDevice : IDevicesService, ICommunicationDev
                 {
                     // connect timed out, cancel everthing
                     this.tokenSource?.Cancel();
+                    deviceOpenEvent.WaitOne();
                     return false;
 
                 }
@@ -87,6 +92,7 @@ public partial class AndroidBluetoothDevice : IDevicesService, ICommunicationDev
             this.tokenSource?.Cancel();
             FireErrorEvent($"Device Open Failure - {ex.Message}");
         }
+        deviceOpenEvent.WaitOne();
         return false;
     }
 
